@@ -1,0 +1,79 @@
+# This workflow will install Python dependencies and the latest RC of pysat from
+# test pypi. This test should be manually run before a pysat RC is officially
+# approved and versioned. For more information see:
+# https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Test install of latest RC from pip
+
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+        python-version: ["3.10", "3.11", "3.13", "3.14"]
+        numpy_ver: ["latest"]
+        test_config: ["latest"]
+        include:
+          # SPEC0000 compliance settings
+          - python-version: "3.12"
+            numpy_ver: "2.0.0"
+            pandas_ver: "2.3.0"
+            scipy_ver: "1.14.0"
+            xarray_ver: "2024.5.0"
+            os: ubuntu-latest
+            test_config: "SPEC0000"
+          # Operational compliance settings
+          - python-version: "3.12"
+            numpy_ver: "2.0.0"
+            os: "ubuntu-22.04"
+            test_config: "Ops"
+
+    name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v6
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install standard dependencies
+      if: ${{ matrix.test_config == 'latest'}}
+      run: pip install -r requirements.txt
+
+    - name: Install Operational dependencies
+      if: ${{ matrix.test_config == 'Ops'}}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libhdf5-serial-dev
+        sudo apt-get install -y libnetcdf-dev
+        pip install numpy==${{ matrix.numpy_ver }}
+        pip install -r requirements.txt
+        pip install "pip<19.0"
+
+    - name: Install SPEC0000 dependencies
+      if: ${{ matrix.test_config == 'SPEC0000'}}
+      run: |
+        pip install numpy==${{ matrix.numpy_ver }}
+        pip install pandas==${{ matrix.pandas_ver }}
+        pip install scipy==${{ matrix.scipy_ver }}
+        pip install xarray==${{ matrix.xarray_ver }}
+        pip install --upgrade-strategy only-if-needed -r requirements.txt
+
+    - name: Install RC
+      run: |
+        pip -V
+        python -m pip install --no-deps --pre -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ GeospaceDataManagement
+
+    - name: Set up the data directory
+      run: |
+        mkdir gdmData
+        python -c "import GeospaceDataManagement; GeospaceDataManagement.params['data_dirs'] = 'gdmData'"
+
+    - name: Check that install imports correctly
+      run: |
+        cd gdmData
+        python -c "import GeospaceDataManagement; print(GeospaceDataManagement.__version__)"
