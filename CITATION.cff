@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: GeospaceDataManager
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - family-names: "Burrell"
+    given-names: "Angeline G."
+    affiliation: "Naval Research Laboratory"
+    orcid: "https://orcid.org/0000-0001-8875-9326"
+repository-code: >-
+  https://github.com/USNavalResearchLaboratory/GeospaceDataManagement
+keywords:
+  - "Ionosphere"
+  - "Atmosphere"
+  - "Space Physics"
+  - "Heliophysics"
+  - "Thermosphere"
+  - "Magnetospehre"
+  - "Observations"
+  - "Models"
+license: MIT
+version: 0.0.1

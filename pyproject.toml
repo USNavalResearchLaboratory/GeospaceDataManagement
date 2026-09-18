@@ -37,7 +37,7 @@ keywords = [
   "heliosphere",
   "observations",
   "models",
-  "space"
+  "space physics"
 ]
 dependencies = [
   "dask >= 2022.12.1",

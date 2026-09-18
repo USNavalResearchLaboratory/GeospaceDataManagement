@@ -29,10 +29,15 @@ jobs:
     - name: Set up the data directory
       run: |
         mkdir gdmData
-        python -c "import GeospaceDataManagement; GeospaceDataManagement.params['data_dirs'] = './gdmData'"
+        python -c "import GeospaceDataManagement as gdm; gdm.params['data_dirs'] = './gdmData'"
 
     - name: Check documentation build
       run: sphinx-build -E -b html docs dist/docs
 
     - name: Check documentation links
       run: sphinx-build -b linkcheck docs dist/docs
+
+      - name: Validate the CITATION.cff
+        uses: citation-file-format/cffconvert-github-action@2.0.0
+        with:
+          args: "--infile ./CITATION.cff --validate"
