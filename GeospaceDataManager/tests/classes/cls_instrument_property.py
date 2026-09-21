@@ -21,9 +21,7 @@ Base class stored here, but tests inherited by test_instrument.py
 
 import datetime as dt
 import functools
-from importlib import reload
 import logging
-import numpy as np
 import warnings
 
 import pandas as pds
@@ -348,6 +346,7 @@ class InstPropertyTests(object):
     def test_copy_from_reference(self):
         """Test `.copy()` if invoked from a `weakref.proxy` of Instrument."""
 
+        inst_copy = self.testInst.copy()
         inst_copy2 = self.testInst.files.inst_info['inst'].copy()
         assert inst_copy == self.testInst
         assert inst_copy == inst_copy2
@@ -662,7 +661,7 @@ class InstPropertyTests(object):
         # Update settings for this test
         with caplog.at_level(logging.WARNING, logger='GeospaceDataManagement'):
             self.testInst = gdm.Instrument(inst_module=inst_module,
-                                             data_dir="not_a_directory")
+                                           data_dir="not_a_directory")
 
         captured = caplog.text
         assert captured.find("data directory doesn't exist") >= 0
@@ -716,7 +715,7 @@ class InstPropertyTests(object):
 
         with warnings.catch_warnings(record=True) as war:
             tinst = gdm.Instrument(inst_module=self.testInst.inst_module,
-                                     **kwargs)
+                                   **kwargs)
 
         default_str = ' '.join(["inst_module supplied along with",
                                 "platform/name. Defaulting to"])

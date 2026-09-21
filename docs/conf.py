@@ -65,7 +65,8 @@ master_doc = 'index'
 # General information about the project.
 project = 'GeospaceDataManagement'
 author = 'the GeospaceDataManagement Team'
-copyright = 'This is a U.S. government work and not under copyright protection in the U.S.'
+copyright = ''.join(['This is a U.S. government work and not under copyright',
+                     ' protection in the U.S.'])
 title = '{:s} Documentation'.format(project)
 description = 'Supports science analysis for geospace products'
 

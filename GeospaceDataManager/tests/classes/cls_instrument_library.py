@@ -80,10 +80,10 @@ def initialize_test_inst_and_date(inst_dict):
 
     kwargs = inst_dict['kwargs'] if 'kwargs' in inst_dict.keys() else {}
     test_inst = gdm.Instrument(inst_module=inst_dict['inst_module'],
-                                 tag=inst_dict['tag'],
-                                 inst_id=inst_dict['inst_id'],
-                                 temporary_file_list=True, update_files=True,
-                                 **kwargs)
+                               tag=inst_dict['tag'],
+                               inst_id=inst_dict['inst_id'],
+                               temporary_file_list=True, update_files=True,
+                               **kwargs)
     test_dates = inst_dict['inst_module']._test_dates
     date = test_dates[inst_dict['inst_id']][inst_dict['tag']]
     return test_inst, date
@@ -314,7 +314,7 @@ class InstLibTests(object):
         for inst_id in self.module.inst_ids.keys():
             for tag in self.module.inst_ids[inst_id]:
                 self.test_inst = gdm.Instrument(inst_module=self.module,
-                                                  tag=tag, inst_id=inst_id)
+                                                tag=tag, inst_id=inst_id)
 
                 # Test to see that the class parameters were passed in
                 testing.assert_isinstance(self.test_inst, gdm.Instrument)

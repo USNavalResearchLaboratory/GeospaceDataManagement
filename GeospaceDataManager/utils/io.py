@@ -1402,8 +1402,8 @@ def inst_to_netcdf(inst, fname, base_instrument=None, epoch_name=None,
     # Remove any attributes with the names below. gdm is responsible
     # for including them in the file.
     gdm_items = ['Date_End', 'Date_Start', 'File', 'File_Date',
-                   'Generation_Date', 'Logical_File_ID', 'acknowledgements',
-                   'references']
+                 'Generation_Date', 'Logical_File_ID', 'acknowledgements',
+                 'references']
     for pitem in gdm_items:
         if pitem in attrb_dict:
             gdm.logger.debug('Removing {} attribute and replacing.'.format(

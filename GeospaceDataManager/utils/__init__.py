@@ -3,10 +3,14 @@
 
 """
 
-from GeospaceDataManagement.utils._core import available_instruments  # noqa: F401
-from GeospaceDataManagement.utils._core import display_available_instruments  # noqa: F401
-from GeospaceDataManagement.utils._core import display_instrument_stats  # noqa: F401
-from GeospaceDataManagement.utils._core import generate_instrument_list  # noqa: F401
+from GeospaceDataManagement.utils._core import \
+    available_instruments  # noqa: F401
+from GeospaceDataManagement.utils._core import \
+    display_available_instruments  # noqa: F401
+from GeospaceDataManagement.utils._core import \
+    display_instrument_stats  # noqa: F401
+from GeospaceDataManagement.utils._core import \
+    generate_instrument_list  # noqa: F401
 from GeospaceDataManagement.utils._core import get_mapped_value  # noqa: F401
 from GeospaceDataManagement.utils._core import listify  # noqa: F401
 from GeospaceDataManagement.utils._core import NetworkLock  # noqa: F401

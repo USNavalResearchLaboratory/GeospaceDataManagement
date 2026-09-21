@@ -55,7 +55,7 @@ A full suite of instrument support modules may be registered at once using
 
 import importlib
 
-import GeospaceDataManagement
+import GeospaceDataManagement as gdm
 import GeospaceDataManagement.tests.classes.cls_instrument_library as itc
 
 
@@ -233,7 +233,7 @@ def register_by_module(module, overwrite=False):
     -----
     Gets a list of sub-modules by using the `__all__` attribute,
     defined in the module's `__init__.py`
-    
+
     Enables instantiation of a third-party Instrument module using
     ::
 

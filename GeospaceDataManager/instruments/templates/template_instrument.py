@@ -19,7 +19,7 @@ This is a good area to introduce the instrument, provide background
 on the mission, operations, instrumentation, and measurements.
 
 Also a good place to provide contact information. This text will
-be included in the pysat API documentation.
+be included in the GeospaceDataManagement API documentation.
 
 Properties
 ----------
@@ -60,8 +60,8 @@ import GeospaceDataManagement as gdm
 
 # The platform and name strings associated with this instrument need to be
 # defined at the top level.  These attributes will be copied over to the
-# Instrument object by pysat.  The strings used here should also be used to
-# name this file platform_name.py
+# Instrument object by GeospaceDataManagement.  The strings used here should
+# also be used to name this file platform_name.py
 platform = ''
 name = ''
 
@@ -117,7 +117,7 @@ _test_download_ci = {'': {'': False, 'tag_string': False}}
 _password_req = {'': {'': True, 'tag_string': False}}
 
 # ----------------------------------------------------------------------------
-# Instrument methods: routines that are attached to the pysat.Instrument
+# Instrument methods: routines that are attached to the gdm.Instrument
 # as class methods
 
 
@@ -137,7 +137,7 @@ def init(self):
     self.references = 'These are the instrument references'
 
     # Direct feedback to logging info
-    pysat.logger.info(self.acknowledgements)
+    gdm.logger.info(self.acknowledgements)
     return
 
 
@@ -175,7 +175,7 @@ def preprocess(self):
     return
 
 # ----------------------------------------------------------------------------
-# Instrument functions: routines that are attached to the pysat.Instrument
+# Instrument functions: routines that are attached to the gdm.Instrument
 # as function attributes
 
 
@@ -222,7 +222,7 @@ def list_files(tag='', inst_id='', data_path='', format_str=None):
     The returned Series should not have any duplicate datetimes. If there are
     multiple versions of a file the most recent version should be kept and the
     rest discarded. This routine uses the `gdm.Files.from_os` constructor,
-    thus the returned files are up to pysat specifications.
+    thus the returned files are up to GeospaceDataManagement specifications.
 
     Multiple data levels may be supported via the 'tag' input string.
     Multiple instruments via the `inst_id` string.
@@ -304,8 +304,8 @@ def load(fnames, tag='', inst_id='', custom_keyword=None):
         Iterable of filename strings, full path, to data files to be loaded.
         This input is nominally provided by GeospaceDataManagement.
     tag : str
-        Tag name used to identify particular data set to be loaded.
-        This input is nominally provided by pysat itself. While `tag` defaults
+        Tag name used to identify particular data set to be loaded. This input
+        is nominally provided by GeospaceDataManagement. While `tag` defaults
         to None here, GeospaceDataManagement provides '' as the default tag
         unless specified by user at Instrument instantiation. (default='')
     inst_id : str
@@ -343,18 +343,18 @@ def load(fnames, tag='', inst_id='', custom_keyword=None):
 
     # netCDF4 files, particularly those produced by GeospaceDataManagement can
     # be loaded using a GeospaceDataManagement provided function, load_netcdf4.
-    data = pysat.utils.load_netcdf4(fnames, epoch_name='Epoch',
-                                    labels={'units': ('Units', str),
-                                            'name': ('Long_Name', str),
-                                            'notes': ('Var_Notes', str),
-                                            'desc': ('CatDesc', str),
-                                            'plot': ('FieldNam', str),
-                                            'axis': ('LablAxis', str),
-                                            'scale': ('ScaleTyp', str),
-                                            'min_val': ('ValidMin', float),
-                                            'max_val': ('ValidMax', float),
-                                            'fill_val': ('FillVal', float)},
-                                    pandas_format=pandas_format)
+    data = gdm.utils.load_netcdf4(fnames, epoch_name='Epoch',
+                                  labels={'units': ('Units', str),
+                                          'name': ('Long_Name', str),
+                                          'notes': ('Var_Notes', str),
+                                          'desc': ('CatDesc', str),
+                                          'plot': ('FieldNam', str),
+                                          'axis': ('LablAxis', str),
+                                          'scale': ('ScaleTyp', str),
+                                          'min_val': ('ValidMin', float),
+                                          'max_val': ('ValidMax', float),
+                                          'fill_val': ('FillVal', float)},
+                                  pandas_format=pandas_format)
     return data
 
 

@@ -688,7 +688,7 @@ class TestFileDirectoryTranslations(CICleanSetup):
             # Refresh inst with the old directory template set to get now 'old'
             # path information.
             inst2 = gdm.Instrument(inst.platform, inst.name, tag=inst.tag,
-                                     inst_id=inst.inst_id)
+                                   inst_id=inst.inst_id)
 
             # Check that directories with simpler platform org were NOT removed.
             assert os.path.isdir(inst2.files.data_path)
@@ -808,7 +808,7 @@ class TestFileUtils(CICleanSetup):
 
         # Use from_os function to get pandas Series of files and dates
         files = gdm.Files.from_os(data_path=self.testInst.files.data_path,
-                                    format_str=root_fname)
+                                  format_str=root_fname)
 
         # Get file attributes
         root_dir = self.testInst.files.data_path
