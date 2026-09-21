@@ -115,8 +115,8 @@ class Files(object):
     NameError
         If `gdm.params['data_dirs']` was not assigned
 
-    Note
-    ----
+    Notes
+    -----
     Interfaces with the `list_files` method for a given instrument support
     module to create an ordered collection of files in time, used primarily by
     the `gdm.Instrument` object to identify files to be loaded. The `Files`
@@ -404,8 +404,8 @@ class Files(object):
         IndexError
             If data is outside of file bounds
 
-        Note
-        ----
+        Notes
+        -----
         Slicing has a non-inclusive end point
 
         """
@@ -487,8 +487,8 @@ class Files(object):
         files_info : pds.Series
             Stored file information, filenames indexed by datetime
 
-        Note
-        ----
+        Notes
+        -----
         Updates the file list (files), `start_date`, and `stop_date` attributes
         of the Files class object
 
@@ -527,8 +527,8 @@ class Files(object):
     def _ensure_unique_file_datetimes(self):
         """Update the file list (`self.files`) to ensure uniqueness.
 
-        Note
-        ----
+        Notes
+        -----
         Logs a warning if there are files with duplicate datetimes. Keeps
         one of each of the duplicated files while dropping all other duplicated
         times.
@@ -732,8 +732,8 @@ class Files(object):
     def refresh(self):
         """Update list of files, if there are changes.
 
-        Note
-        ----
+        Notes
+        -----
         Calls underlying list_files_rtn for the particular science instrument.
         Typically, these routines search in the GeospaceDataManagement provided
         path,gdm_data_dir/platform/name/tag/inst_id, where gdm_data_dir is set
@@ -857,8 +857,8 @@ class Files(object):
            A datetime-index Series of all new fileanmes since the last known
            change to the files.
 
-        Note
-        ----
+        Notes
+        -----
         GeospaceDataManagement stores filenames in the user_home/.gdm directory.
         Filenames are stored if there is a change and either `update_files` is
         True at instrument object level or `files.refresh()` is called.
@@ -890,8 +890,8 @@ class Files(object):
         ValueError
             Filename not in index
 
-        Note
-        ----
+        Notes
+        -----
         If fname not found in the file information already attached
         to the instrument.files instance, then a files.refresh() call
         is made.
@@ -929,8 +929,8 @@ class Files(object):
             A list of filenames between and including start and stop times
             over all intervals.
 
-        Note
-        ----
+        Notes
+        -----
         `start` and `stop` must be of the same type: both array-like or both
         strings
 
@@ -990,8 +990,8 @@ class Files(object):
         ValueError
             If `data_path` or `format_str` is None
 
-        Note
-        ----
+        Notes
+        -----
         Requires fixed_width or delimited filename
 
         Does not produce a `Files` instance, but the proper output from

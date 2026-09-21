@@ -165,8 +165,8 @@ class Instrument(object):
          keyword is used, or if `file_format`, `custom`, or `pad` are improperly
          formatted
 
-    Note
-    ----
+    Notes
+    -----
     pysat attempts to load the module platform_name.py located in the
     pysat/instruments directory. This module provides the underlying
     functionality to download, load, and clean instrument data. Alternatively,
@@ -697,8 +697,8 @@ class Instrument(object):
         ValueError
             When an underlying error for data access is raised
 
-        Note
-        ----
+        Notes
+        -----
         `inst['name']` is equivalent to `inst.data.name`
 
         See pandas or xarray .loc and .iloc documentation for more details
@@ -785,8 +785,8 @@ class Instrument(object):
             Data access issues, passed from underlying xarray library, or a
             mismatch of indices and dimensions
 
-        Note
-        ----
+        Notes
+        -----
         inst['name'] is `inst.data.name`
 
         See xarray `.loc` and `.iloc` documentation for more details
@@ -1117,8 +1117,8 @@ class Instrument(object):
 
         Default bounds are the first and last dates from files on local system
 
-        Note
-        ----
+        Notes
+        -----
         Limits of iteration, and iteration type (date/file) set by `bounds`
         attribute
 
@@ -1297,8 +1297,8 @@ class Instrument(object):
         AttributeError
             If a required Instrument method is missing
 
-        Note
-        ----
+        Notes
+        -----
         methods
             init, preprocess, and clean
         functions
@@ -1595,8 +1595,8 @@ class Instrument(object):
         data : pds.DataFrame or xr.Dataset
             gdm data
 
-        Note
-        ----
+        Notes
+        -----
         Repeated calls will not advance date/file and will produce the same
         data.
 
@@ -1627,8 +1627,8 @@ class Instrument(object):
         data : pds.DataFrame or xr.Dataset
             gdm data
 
-        Note
-        ----
+        Notes
+        -----
         Repeated calls will not decrement date/file and will produce the same
         data
 
@@ -1694,8 +1694,8 @@ class Instrument(object):
         TypeError
             When coltype is unknown
 
-        Note
-        ----
+        Notes
+        -----
         Understands np.dtype, numpy int, uint, and float variants, and
         str subclasses
 
@@ -1815,8 +1815,8 @@ class Instrument(object):
             `start`/`stop`, or if bounds aren't in increasing order, or if
             the input type for `start` or `stop` isn't recognized
 
-        Note
-        ----
+        Notes
+        -----
         Both start and stop must be the same type (date, or filename) or None.
         Only the year, month, and day are used for date inputs.
 
@@ -2206,8 +2206,8 @@ class Instrument(object):
         **kwargs : dict
             Optional keyword arguments passed to pds.concat or xr.concat
 
-        Note
-        ----
+        Notes
+        -----
         For pandas, sort=False is passed along to the underlying
         `pandas.concat` method. If sort is supplied as a keyword, the
         user provided value is used instead.  Recall that sort orders the
@@ -2298,8 +2298,8 @@ class Instrument(object):
             Dictionary of keyword arguments required by the custom function
             (default=None)
 
-        Note
-        ----
+        Notes
+        -----
         Functions applied using `custom_attach` may add, modify, or use
         the data within Instrument inside of the function, and so should not
         return anything.
@@ -2345,8 +2345,8 @@ class Instrument(object):
         ValueError
             Raised when function returns any value
 
-        Note
-        ----
+        Notes
+        -----
         This method does not generally need to be invoked directly by users.
 
         """
@@ -2463,8 +2463,8 @@ class Instrument(object):
             Passed to `self.load()`. If True, then padded data within
             the load method will be retained. (default=False)
 
-        Note
-        ----
+        Notes
+        -----
         If there were no previous calls to load then the
         first day(default)/file will be loaded.
 
@@ -2548,8 +2548,8 @@ class Instrument(object):
             Passed to `self.load()`. If True, then padded data within
             the load method will be retained. (default=False)
 
-        Note
-        ----
+        Notes
+        -----
         If there were no previous calls to load then the first day (default) or
         file will be loaded.
 
@@ -2747,8 +2747,8 @@ class Instrument(object):
         ValueError
             For input incompatible with Instrument set-up
 
-        Note
-        ----
+        Notes
+        -----
         Loads data for a chosen instrument into `.data`. Any functions chosen
         by the user and added to the custom processing queue (`.custom.attach`)
         are automatically applied to the data before it is available to
@@ -3149,8 +3149,8 @@ class Instrument(object):
         pds.Series
             pandas Series of filenames indexed by date and time
 
-        Note
-        ----
+        Notes
+        -----
         Default behaviour is to return all files.  User may additionally
         specify a given year, year/month, or year/month/day combination to
         return a subset of available files.
@@ -3195,8 +3195,8 @@ class Instrument(object):
         List
             First and last datetimes obtained from `remote_file_list`
 
-        Note
-        ----
+        Notes
+        -----
         Default behaviour is to search all files.  User may additionally
         specify a given year, year/month, or year/month/day combination to
         return a subset of available files.
@@ -3214,8 +3214,8 @@ class Instrument(object):
         **kwargs : dict
             Dictionary of keywords that may be options for specific instruments
 
-        Note
-        ----
+        Notes
+        -----
         Data will be downloaded to `self.files.data_path`
 
         If Instrument bounds are set to defaults they are updated
@@ -3337,8 +3337,8 @@ class Instrument(object):
         ValueError
             Raised if there is an issue creating `self.files.data_path`
 
-        Note
-        ----
+        Notes
+        -----
         Data will be downloaded to `self.files.data_path`
 
         If Instrument bounds are set to defaults they are updated
@@ -3566,8 +3566,8 @@ def _get_supported_keywords(local_func):
     out_dict : dict
         dict of supported keywords and default values
 
-    Note
-    ----
+    Notes
+    -----
     If the input is a partial function then the list of keywords returned only
     includes keywords that have not already been set as part of the
     functools.partial instantiation.
@@ -3650,8 +3650,8 @@ def _check_load_arguments_none(args, raise_error=False):
     ValueError
         If any one value in `args` is not None and `raise_error` is True
 
-    Note
-    ----
+    Notes
+    -----
     Used to support `.load` method checks that arguments that should be
     None are None, while also keeping the `.load` method readable
 

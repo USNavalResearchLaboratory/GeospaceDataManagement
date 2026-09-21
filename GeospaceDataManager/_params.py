@@ -63,8 +63,8 @@ class Parameters(object):
     OSError
         User provided path does not exist
 
-    Note
-    ----
+    Notes
+    -----
     This method will look for 'gdm_settings.json' file first in the
     current working directory and then in the home '~/.gdm' directory.
 
@@ -308,8 +308,8 @@ class Parameters(object):
     def clear_and_restart(self):
         """Clear all stored settings and sets GeospaceDataManamgement defaults.
 
-        Note
-        ----
+        Notes
+        -----
         GeospaceDataManamgement parameters without a default value are set to []
 
         """
@@ -329,8 +329,8 @@ class Parameters(object):
     def restore_defaults(self):
         """Restore default GeospaceDataManamgement parameters.
 
-        Note
-        ----
+        Notes
+        -----
         Does not modify any stored custom user keys or GeospaceDataManamgement
         parameters without a default value.
 
