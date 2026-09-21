@@ -1,0 +1,1047 @@
+#!/usr/bin/env python
+# Full license can be found in License.md
+# Full author list can be found in CITATION.cff
+#
+# ----------------------------------------------------------------------------
+# Original Authors: pysat development team (c) 2016, Russell Stoneback
+#
+# Modified 2026+
+# This is a U.S. government work and not under copyright protection in the U.S.
+#
+# DISTRIBUTION STATEMENT A: Approved for public release. Distribution is
+# unlimited.
+# ----------------------------------------------------------------------------
+"""Tests for data access and related functions in the gdm Instrument object.
+
+Includes:
+* data loading
+* equality method comparisons
+* index tests
+* setter and getter functions
+* concat
+* empty data flags
+* variable renaming
+* generic meta translation
+
+Notes
+-----
+Base class stored here, but tests inherited by test_instrument.py
+
+"""
+
+import datetime as dt
+import logging
+import numpy as np
+
+import pandas as pds
+import pytest
+import xarray as xr
+
+import GeospaceDataManagement as gdm
+from GeospaceDataManagement.utils import testing
+from GeospaceDataManagement.utils.time import filter_datetime_input
+
+
+class InstAccessTests(object):
+    """Basic tests for `gdm.Instrument` data access.
+
+    Notes
+    -----
+    Inherited by classes in test_instrument.py.  Setup and teardown methods are
+    specified there.
+
+    See Also
+    --------
+    GeospaceDataManagement.tests.test_instrument
+
+    """
+
+    def test_instrument_complete_by_init(self):
+        """Test Instrument object fully complete by self._init_rtn()."""
+
+        # Create a base instrument to compare against
+        inst_copy = gdm.Instrument(inst_module=self.testInst.inst_module)
+
+        # Get instrument module and init funtcion
+        inst_mod = self.testInst.inst_module
+        inst_mod_init = inst_mod.init
+
+        def temp_init(inst, test_init_kwarg=None):
+            """Test the passed Instrument is complete."""
+
+            # Apply normal init rtn to ensure both Instruments have same code
+            # history.
+            inst_mod_init(inst, test_init_kwarg=inst_copy.test_init_kwarg)
+
+            # Equality checks against all routines, including init.
+            inst._init_rtn = inst_copy._init_rtn
+
+            assert inst == inst_copy
+
+        # Assign new init to test module
+        inst_mod.init = temp_init
+
+        # Instantiate instrument with test module which invokes needed test
+        # code in the background
+        gdm.Instrument(inst_module=inst_mod)
+
+        # Restore nominal init function
+        inst_mod.init = inst_mod_init
+
+        return
+
+    def eval_successful_load(self, end_date=None):
+        """Evaluate successful loading of `self.testInst`.
+
+        Parameters
+        ----------
+        end_date : dt.datetime or NoneType
+            End date for loading data.  If None, assumes self.ref_time + 1 day.
+            (default=None)
+
+        Notes
+        -----
+        Success of test is tied to `self.ref_time`.
+
+        """
+        # Test that the first loaded time matches the first requested time
+        assert self.testInst.index[0] == self.ref_time, \
+            "First loaded time is incorrect {:} != {:}".format(
+                self.testInst.index[0], self.ref_time)
+
+        # Test that the Instrument date is set to the requested start date
+        self.out = dt.datetime(self.ref_time.year, self.ref_time.month,
+                               self.ref_time.day)
+        assert self.testInst.date == self.out, \
+            "Incorrect Instrument date attribute"
+
+        # Test that the end of the loaded data matches the requested end date
+        if end_date is None:
+            end_date = self.ref_time + dt.timedelta(days=1)
+        assert self.testInst.index[-1] > self.ref_time, \
+            "Last loaded time is not greater than the start time"
+        assert self.testInst.index[-1] <= end_date, \
+            "Last loaded time is greater than the requested end date"
+
+        return
+
+    @pytest.mark.parametrize("kwargs", [{}, {'num_samples': 30}])
+    def test_basic_instrument_load(self, kwargs):
+        """Test that the correct day loads with input year and doy.
+
+        Parameters
+        ----------
+        kwargs : dict
+            Dictionary of keywords and arguments to invoke when loading.
+
+        """
+
+        # Load data by year and day of year
+        self.testInst.load(self.ref_time.year, self.ref_doy, **kwargs)
+
+        # Test that the loaded date range is correct
+        self.eval_successful_load()
+        return
+
+    @pytest.mark.parametrize("method", ["del", "drop"])
+    @pytest.mark.parametrize("del_all", [True, False])
+    def test_basic_instrument_del(self, method, del_all):
+        """Test that data can be deleted from an Instrument.
+
+        Parameters
+        ----------
+        method : str
+            String specifying the deletion method
+        del_all : bool
+            Delete a single variable if False, delete all if True
+
+        """
+
+        # Load data by year and day of year
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+
+        # Get a variable name(s) to delete
+        var = self.testInst.variables if del_all else self.testInst.variables[0]
+
+        # Delete the variable
+        if method == 'del':
+            del self.testInst[var]
+        else:
+            self.testInst.drop(var)
+
+        # Test that the absence of the desired variable(s)
+        if del_all:
+            assert self.testInst.empty
+            assert len(self.testInst.variables) == 0
+        else:
+            assert var not in self.testInst.variables
+        return
+
+    def test_basic_instrument_bad_var_drop(self):
+        """Check for error when deleting absent data variable."""
+        # Load data by year and day of year
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+
+        # Test that the correct error is raised
+        testing.eval_bad_input(self.testInst.drop, KeyError,
+                               "not found in Instrument variables",
+                               input_args=["not_a_data_variable"])
+        return
+
+    def test_basic_instrument_partial_bad_var_drop(self, caplog):
+        """Check for log warning when deleting present and absent variables."""
+        # Load data by year and day of year
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+
+        dvars = [self.testInst.variables[0], "not_a_data_var"]
+
+        # Test that the correct warning is raised
+        with caplog.at_level(logging.INFO, logger='GeospaceDataManagement'):
+            self.testInst.drop(dvars)
+
+        captured = caplog.text
+        assert captured.find("not found in Instrument variables") > 0
+        return
+
+    @pytest.mark.parametrize('pad', [None, dt.timedelta(days=1)])
+    def test_basic_instrument_load_no_data(self, caplog, pad):
+        """Test Instrument load with no data for appropriate log messages.
+
+        Parameters
+        ----------
+        pad : dt.timedelta, pds.DateOffset, NoneType
+            Pad input for load call
+
+        """
+
+        # Get a date that is not covered by an Instrument object.
+        no_data_d = self.testInst.files.files.index[0] - dt.timedelta(weeks=10)
+
+        with caplog.at_level(logging.INFO, logger='GeospaceDataManagement'):
+
+            # Attempt to load data for a date with no data.
+            # Test doesn't check against loading by filename since that produces
+            # an error if there is no file. Loading by yr, doy no different
+            # than date in this case.
+            self.testInst.load(date=no_data_d, pad=pad)
+
+        # Confirm by checking against caplog that metadata was
+        # not assigned.
+        captured = caplog.text
+
+        assert captured.find("Metadata was not assigned as there") >= 0
+
+        # Generate string to verify proper no data message
+        output_str = '{platform} {name} {tag} {inst_id}'
+        output_str = output_str.format(platform=self.testInst.platform,
+                                       name=self.testInst.name,
+                                       tag=self.testInst.tag,
+                                       inst_id=self.testInst.inst_id)
+        output_str = ''.join(("No ", output_str))
+
+        # Remove any extra spaces. Follows code in _instrument.
+        output_str = " ".join(output_str.split())
+
+        assert captured.find(output_str) >= 0
+
+        return
+
+    def test_basic_instrument_load_two_days(self):
+        """Test that the correct day loads (checking object date and data)."""
+
+        # Load the reference date
+        end_date = self.ref_time + dt.timedelta(days=2)
+        end_doy = int(end_date.strftime("%j"))
+        self.testInst.load(self.ref_time.year, self.ref_doy, end_date.year,
+                           end_doy)
+
+        # Test that the loaded date range is correct
+        self.eval_successful_load(end_date=end_date)
+        return
+
+    def test_basic_instrument_bad_keyword_at_load(self):
+        """Check for error when calling load with bad keywords."""
+
+        # Test that the correct error is raised
+        testing.eval_bad_input(self.testInst.load, TypeError,
+                               "load() got an unexpected keyword",
+                               input_kwargs={'date': self.ref_time,
+                                             'unsupported_keyword': True})
+        return
+
+    def test_basic_instrument_load_yr_no_doy(self):
+        """Ensure day of year required if year is present."""
+
+        # Check that the correct error is raised
+        estr = 'Unknown or incomplete input combination.'
+        testing.eval_bad_input(self.testInst.load, TypeError, estr,
+                               [self.ref_time.year])
+        return
+
+    @pytest.mark.parametrize('doy', [0, 367, 1000, -1, -10000])
+    def test_basic_instrument_load_yr_bad_doy(self, doy):
+        """Ensure error raised if day of year load argument out of valid range.
+
+        Parameters
+        ----------
+        doy : int
+            Day of year to create an error when loading.
+
+        """
+
+        estr = 'Day of year (doy) is only valid between and '
+        testing.eval_bad_input(self.testInst.load, ValueError, estr,
+                               [self.ref_time.year, doy])
+        return
+
+    @pytest.mark.parametrize('end_doy', [0, 367, 1000, -1, -10000])
+    def test_basic_instrument_load_yr_bad_end_doy(self, end_doy):
+        """Ensure error raised if `end_doy` keyword out of valid range.
+
+        Parameters
+        ----------
+        end_doy : int
+            Day of year to create an error when loading by end_date.
+
+        """
+
+        estr = 'Day of year (end_doy) is only valid between and '
+        testing.eval_bad_input(self.testInst.load, ValueError, estr,
+                               [self.ref_time.year, 1],
+                               {'end_yr': self.ref_time.year,
+                                'end_doy': end_doy})
+        return
+
+    def test_basic_instrument_load_yr_no_end_doy(self):
+        """Ensure `end_doy` required if `end_yr` present."""
+
+        estr = 'Both end_yr and end_doy must be set'
+        testing.eval_bad_input(self.testInst.load, ValueError, estr,
+                               [self.ref_time.year, self.ref_doy,
+                                self.ref_time.year])
+        return
+
+    @pytest.mark.parametrize("kwargs", [{'yr': 2009, 'doy': 1,
+                                         'date': dt.datetime(2009, 1, 1)},
+                                        {'yr': 2009, 'doy': 1,
+                                         'end_date': dt.datetime(2009, 1, 1)},
+                                        {'yr': 2009, 'doy': 1,
+                                         'fname': 'dummy_str.nofile'},
+                                        {'yr': 2009, 'doy': 1,
+                                         'stop_fname': 'dummy_str.nofile'},
+                                        {'date': dt.datetime(2009, 1, 1),
+                                         'fname': 'dummy_str.nofile'},
+                                        {'date': dt.datetime(2009, 1, 1),
+                                         'stop_fname': 'dummy_str.nofile'},
+                                        {'date': dt.datetime(2009, 1, 1),
+                                         'fname': 'dummy_str.nofile',
+                                         'end_yr': 2009, 'end_doy': 1}])
+    def test_basic_instrument_load_mixed_inputs(self, kwargs):
+        """Ensure mixed load inputs raise ValueError.
+
+        Parameters
+        ----------
+        kwargs : dict
+            Dictionary of keywords and arguments to produce an error when
+            instrument is loaded.
+
+        """
+
+        estr = 'An inconsistent set of inputs have been'
+        testing.eval_bad_input(self.testInst.load, ValueError, estr,
+                               input_kwargs=kwargs)
+        return
+
+    def test_basic_instrument_load_no_input(self):
+        """Test that `.load()` loads all data."""
+
+        self.testInst.load()
+        assert (self.testInst.index[0] == self.testInst.files.start_date)
+        assert (self.testInst.index[-1] >= self.testInst.files.stop_date)
+        assert (self.testInst.index[-1] <= self.testInst.files.stop_date
+                + dt.timedelta(days=1))
+        return
+
+    @pytest.mark.parametrize('load_in,verr',
+                             [('fname', 'have multi_file_day and load by file'),
+                              (None, 'is not supported with multi_file_day')])
+    def test_instrument_load_errors_with_multifile(self, load_in, verr):
+        """Ensure improper use of load with `multi_file_day` raises ValueError.
+
+        Parameters
+        ----------
+        load_in : str or NoneType
+            If 'fname', load by filename. If None, load without kwargs.
+        verr : str
+            Text that should be contained in the error message generated by
+            the improper load configuration above.
+
+        """
+
+        self.testInst.multi_file_day = True
+
+        if load_in == 'fname':
+            load_kwargs = {load_in: self.testInst.files[0]}
+        else:
+            load_kwargs = dict()
+
+        testing.eval_bad_input(self.testInst.load, ValueError, verr,
+                               input_kwargs=load_kwargs)
+        return
+
+    def test_basic_instrument_load_by_date(self):
+        """Test loading by date."""
+
+        self.testInst.load(date=self.ref_time)
+        self.eval_successful_load()
+        return
+
+    def test_basic_instrument_load_by_dates(self):
+        """Test date range loading, `date` and `end_date`."""
+
+        end_date = self.ref_time + dt.timedelta(days=2)
+        self.testInst.load(date=self.ref_time, end_date=end_date)
+        self.eval_successful_load(end_date=end_date)
+        return
+
+    def test_basic_instrument_load_by_date_with_extra_time(self):
+        """Ensure `.load(date=date)` only uses date portion of datetime."""
+
+        # Put in a date that has more than year, month, day
+        self.testInst.load(date=(self.ref_time + dt.timedelta(minutes=71)))
+        self.eval_successful_load()
+        return
+
+    def test_basic_instrument_load_data(self):
+        """Test that correct day loads (checking down to the sec)."""
+
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        self.eval_successful_load()
+        return
+
+    def test_basic_instrument_load_leap_year(self):
+        """Test if the correct day is being loaded (Leap-Year)."""
+
+        if self.check_nonstandard_cadence():
+            pytest.skip("Test only makes sense for daily cadence")
+
+        self.ref_time = dt.datetime(2008, 12, 31)
+        self.ref_doy = 366
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        self.eval_successful_load()
+        return
+
+    @pytest.mark.parametrize("operator,ref_ind",
+                             [('next', 0), ('prev', -1)])
+    def test_file_load_default(self, operator, ref_ind):
+        """Test if correct day loads by default when first invoking iteration.
+
+        Parameters
+        ----------
+        operator : str
+            Name of iterator to use.
+        ref_time : int
+            Expected index to load when iteration is first invoked.
+
+        """
+
+        getattr(self.testInst, operator)()
+
+        # Modify ref time since iterator changes load date.
+        self.ref_time = filter_datetime_input(
+            self.testInst.files.files.index[ref_ind])
+        self.eval_successful_load()
+        return
+
+    @pytest.mark.parametrize("operator", [('next'), ('prev')])
+    def test_file_load_bad_start_file(self, operator):
+        """Test Error when starting iteration on a file not in iteration list.
+
+        Parameters
+        ----------
+        operator : str
+            Name of iterator to use.
+
+        """
+
+        self.testInst.load(fname=self.testInst.files[1])
+
+        # Set new bounds that do not include this date.
+        self.testInst.bounds = (self.testInst.files[0], self.testInst.files[2],
+                                2, 1)
+        testing.eval_bad_input(getattr(self.testInst, operator), StopIteration,
+                               'Unable to find loaded filename ')
+        return
+
+    @pytest.mark.parametrize("operator", [('next'), ('prev')])
+    def test_file_load_bad_start_date(self, operator):
+        """Test that day iterators raise Error on bad start date.
+
+        Parameters
+        ----------
+        operator : str
+            Name of iterator to use.
+
+        """
+
+        self.testInst.load(date=self.ref_time)
+
+        # Set new bounds that do not include this date.
+        self.testInst.bounds = (self.ref_time + dt.timedelta(days=1),
+                                self.ref_time + dt.timedelta(days=10),
+                                '2D', dt.timedelta(days=1))
+
+        testing.eval_bad_input(getattr(self.testInst, operator), StopIteration,
+                               'Unable to find loaded date ')
+        return
+
+    def test_basic_fname_instrument_load(self):
+        """Test loading by filename from attached `.files`."""
+
+        # If mangle_file_date is true, index will not match exactly.
+        # Find the closest point instead.
+        ind = np.argmin(abs(self.testInst.files.files.index - self.ref_time))
+        self.testInst.load(fname=self.testInst.files[ind])
+        self.eval_successful_load()
+        return
+
+    @pytest.mark.parametrize("operator,direction", [('next', 1), ('prev', -1)])
+    def test_fname_load_default(self, operator, direction):
+        """Test correct day loads when moving by day, starting with `fname`.
+
+        Parameters
+        ----------
+        operator : str
+            Name of iterator to use.
+        direction : int
+            Positive if moving forward, negative if moving backward.
+
+        """
+
+        # If mangle_file_date is true, index will not match exactly.
+        # Find the closest point.
+        ind = np.argmin(abs(self.testInst.files.files.index - self.ref_time))
+        self.testInst.load(fname=self.testInst.files[ind])
+        getattr(self.testInst, operator)()
+
+        # Modify ref time since iterator changes load date.
+        foff = pds.tseries.frequencies.to_offset(
+            self.testInst.files.files.index.freqstr)
+        self.ref_time = self.ref_time + direction * foff
+        self.eval_successful_load()
+        return
+
+    def test_filename_load(self):
+        """Test if file is loadable by filename with no path."""
+
+        self.testInst.load(fname=self.ref_time.strftime('%Y-%m-%d.nofile'))
+        self.eval_successful_load()
+        return
+
+    def test_filenames_load(self):
+        """Test if files are loadable by filename range."""
+
+        foff = pds.tseries.frequencies.to_offset(
+            self.testInst.files.files.index.freqstr)
+        stop_fname = self.ref_time + foff
+        stop_fname = stop_fname.strftime('%Y-%m-%d.nofile')
+        self.testInst.load(fname=self.ref_time.strftime('%Y-%m-%d.nofile'),
+                           stop_fname=stop_fname)
+        assert self.testInst.index[0] == self.ref_time
+        assert self.testInst.index[-1] >= self.ref_time + foff
+        assert self.testInst.index[-1] <= self.ref_time + (2 * foff)
+        return
+
+    def test_filenames_load_out_of_order(self):
+        """Test error raised if fnames out of temporal order."""
+
+        foff = pds.tseries.frequencies.to_offset(
+            self.testInst.files.files.index.freqstr)
+        stop_fname = self.ref_time + foff
+        stop_fname = stop_fname.strftime('%Y-%m-%d.nofile')
+        check_fname = self.ref_time.strftime('%Y-%m-%d.nofile')
+        estr = '`stop_fname` must occur at a later date '
+
+        testing.eval_bad_input(self.testInst.load, ValueError, estr,
+                               input_kwargs={'fname': stop_fname,
+                                             'stop_fname': check_fname})
+        return
+
+    def test_eq_no_data(self):
+        """Test equality when the same object."""
+
+        inst_copy = self.testInst.copy()
+        assert inst_copy == self.testInst
+        return
+
+    def test_eq_both_with_data(self):
+        """Test equality when the same object with loaded data."""
+
+        self.testInst.load(date=self.ref_time)
+        inst_copy = self.testInst.copy()
+        assert inst_copy == self.testInst
+        return
+
+    def test_eq_one_with_data(self):
+        """Test equality when the same objects but only one with loaded data."""
+
+        self.testInst.load(date=self.ref_time)
+        inst_copy = self.testInst.copy()
+        inst_copy.data = self.testInst._null_data
+        assert inst_copy != self.testInst
+        return
+
+    def test_eq_different_data_type(self):
+        """Test equality different data type."""
+
+        self.testInst.load(date=self.ref_time)
+        inst_copy = self.testInst.copy()
+
+        # Can only change data types if Instrument empty
+        inst_copy.data = inst_copy._null_data
+
+        if self.testInst.pandas_format:
+            inst_copy.pandas_format = False
+            inst_copy.data = xr.Dataset()
+        else:
+            inst_copy.pandas_format = True
+            inst_copy.data = pds.DataFrame()
+
+        assert inst_copy != self.testInst
+
+        return
+
+    def test_eq_different_type(self):
+        """Test equality False when non-Instrument object."""
+
+        assert self.testInst != np.array([])
+        return
+
+    def test_inequality_modified_object(self):
+        """Test that equality is false if other missing attributes."""
+
+        self.out = self.testInst.copy()
+
+        # Remove attribute
+        del self.out.platform
+
+        assert self.testInst != self.out
+        return
+
+    def test_inequality_reduced_object(self):
+        """Test that equality is false if self missing attributes."""
+
+        self.out = self.testInst.copy()
+        self.out.hi_there = 'hi'
+        assert self.testInst != self.out
+        return
+
+    @pytest.mark.parametrize("prepend, sort_dim_toggle",
+                             [(True, True), (True, False), (False, False)])
+    @pytest.mark.parametrize("include", [True, False])
+    def test_concat_data(self, prepend, sort_dim_toggle, include):
+        """Test `gdm.Instrument.data` concatenation.
+
+        Parameters
+        ----------
+        prepend : bool
+            Behavior of `concat_data`.  If True, assign new data before existing
+            data; if False append new data.
+        sort_dim_toggle : bool
+            If True, sort variable names in pandas before concatenation.  If
+            False, do not sort for pandas objects.  For xarray objects, rename
+            the epoch if True.
+        include : bool
+            Use `include` kwarg instead of `prepend` for the same behaviour.
+
+        """
+
+        # Load a data set to concatonate
+        ref_time2 = self.ref_time + pds.tseries.frequencies.to_offset(
+            self.testInst.files.files.index.freqstr)
+        doy2 = int(ref_time2.strftime('%j'))
+        self.testInst.load(ref_time2.year, doy2)
+        data2 = self.testInst.data
+        len2 = len(self.testInst.index)
+
+        # Load a different data set into the instrument
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        len1 = len(self.testInst.index)
+
+        # Set the keyword arguments
+        kwargs = {'prepend': prepend}
+        if sort_dim_toggle:
+            if self.testInst.pandas_format:
+                kwargs['sort'] = True
+            else:
+                kwargs['dim'] = 'Epoch2'
+                data2 = data2.rename({self.xarray_epoch_name: 'Epoch2'})
+                self.testInst.data = self.testInst.data.rename(
+                    {self.xarray_epoch_name: 'Epoch2'})
+        if include:
+            # To prepend new data, put existing data at end and vice versa
+            kwargs['include'] = 1 if prepend else 0
+
+        # Concat together
+        self.testInst.concat_data(data2, **kwargs)
+
+        if sort_dim_toggle and not self.testInst.pandas_format:
+            # Rename to the standard epoch name
+            self.testInst.data = self.testInst.data.rename(
+                {'Epoch2': self.xarray_epoch_name})
+
+        # Basic test for concatenation
+        self.out = len(self.testInst.index)
+        assert (self.out == len1 + len2)
+
+        # Detailed test for concatenation through index
+        if prepend:
+            assert np.all(self.testInst.index[:len1]
+                          > self.testInst.index[len1:])
+        else:
+            assert np.all(self.testInst.index[:len1]
+                          < self.testInst.index[len1:])
+
+        if self.testInst.pandas_format:
+            if sort_dim_toggle:
+                assert np.all(self.testInst.data.columns
+                              == np.sort(data2.columns))
+            else:
+                assert np.all(self.testInst.data.columns == data2.columns)
+        return
+
+    def test_empty_flag_data_empty(self):
+        """Test the status of the empty flag for unloaded data."""
+
+        assert self.testInst.empty
+        return
+
+    def test_empty_flag_data_not_empty(self):
+        """Test the status of the empty flag for loaded data."""
+
+        self.testInst.load(date=self.ref_time)
+        assert not self.testInst.empty
+        return
+
+    def test_index_attribute(self):
+        """Test the index attribute before and after loading data."""
+
+        # Test that an index is present, even with an empty Instrument
+        assert isinstance(self.testInst.index, pds.Index)
+
+        # Test an index is present with data loaded in an Instrument
+        self.testInst.load(date=self.ref_time)
+        assert isinstance(self.testInst.index, pds.Index)
+        return
+
+    def test_index_return(self):
+        """Test that the index is returned in the proper format."""
+
+        # Load data
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+
+        # Ensure we get the index back
+        if self.testInst.pandas_format:
+            assert np.all(self.testInst.index == self.testInst.data.index)
+        else:
+            assert np.all(self.testInst.index
+                          == self.testInst.data.indexes[self.xarray_epoch_name])
+        return
+
+    @pytest.mark.parametrize("labels", [('mlt'),
+                                        (['mlt', 'longitude']),
+                                        (['longitude', 'mlt'])])
+    def test_basic_data_access_by_name(self, labels):
+        """Check that data can be accessed by name at the instrument level.
+
+        Parameters
+        ----------
+        labels : list of str
+            List of variable names to access.
+
+        """
+
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        assert np.all((self.testInst[labels]
+                       == self.testInst.data[labels]).values)
+        return
+
+    @pytest.mark.parametrize("index", [(0),
+                                       ([0, 1, 2, 3]),
+                                       (slice(0, 10)),
+                                       (np.arange(0, 10))])
+    def test_data_access_by_indices_and_name(self, index):
+        """Check that variables can be accessed by each supported index type.
+
+        Parameters
+        ----------
+        index : int, list, slice, or np.array
+            Indices to retrieve data.
+
+        """
+
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        if self.testInst.pandas_format:
+            assert np.all(self.testInst[index, 'mlt']
+                          == self.testInst.data['mlt'].iloc[index])
+        else:
+            assert np.all(self.testInst[index, 'mlt']
+                          == self.testInst.data['mlt'][index])
+        return
+
+    def test_data_access_by_row_slicing(self):
+        """Check that each variable is downsampled."""
+
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        result = self.testInst[0:10]
+        for variable, array in result.items():
+            assert len(array) == len(self.testInst.data[variable].values[0:10])
+            assert np.all(array == self.testInst.data[variable].values[0:10])
+        return
+
+    def test_data_access_by_row_slicing_and_name_slicing(self):
+        """Check that each variable is downsampled."""
+
+        if not self.testInst.pandas_format:
+            pytest.skip("name slicing not implemented for xarray")
+
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        result = self.testInst[0:10, 'uts':'mlt']
+        for variable, array in result.items():
+            assert len(array) == len(self.testInst.data[variable].values[0:10])
+            assert np.all(array == self.testInst.data[variable].values[0:10])
+        return
+
+    def test_data_access_by_datetime_and_name(self):
+        """Check that datetime can be used to access data."""
+
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        self.out = dt.datetime(2009, 1, 1, 0, 0, 0)
+        assert np.all(self.testInst[self.out, 'uts']
+                      == self.testInst.data['uts'].values[0])
+        return
+
+    def test_data_access_by_datetime_slicing_and_name(self):
+        """Check that a slice of datetimes can be used to access data."""
+
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        time_step = (self.testInst.index[1]
+                     - self.testInst.index[0]).value / 1.E9
+        offset = dt.timedelta(seconds=(10 * time_step))
+        start = dt.datetime(2009, 1, 1, 0, 0, 0)
+        stop = start + offset
+        assert np.all(self.testInst[start:stop, 'uts']
+                      == self.testInst.data['uts'].values[0:11])
+        return
+
+    def test_setting_data_by_name(self):
+        """Test setting data by name."""
+
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        self.testInst['doubleMLT'] = 2. * self.testInst['mlt']
+        assert np.all(self.testInst['doubleMLT'] == 2. * self.testInst['mlt'])
+        return
+
+    def test_setting_series_data_by_name(self):
+        """Test setting series data by name."""
+
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        self.testInst['doubleMLT'] = 2. * pds.Series(
+            self.testInst['mlt'].values, index=self.testInst.index)
+        assert np.all(self.testInst['doubleMLT'] == 2. * self.testInst['mlt'])
+
+        self.testInst['blankMLT'] = pds.Series(None, dtype='float64')
+        assert np.all(np.isnan(self.testInst['blankMLT']))
+        return
+
+    def test_setting_pandas_dataframe_by_names(self):
+        """Test setting pandas dataframe by name."""
+
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        self.testInst[['doubleMLT', 'tripleMLT']] = pds.DataFrame(
+            {'doubleMLT': 2. * self.testInst['mlt'].values,
+             'tripleMLT': 3. * self.testInst['mlt'].values},
+            index=self.testInst.index)
+        assert np.all(self.testInst['doubleMLT'] == 2. * self.testInst['mlt'])
+        assert np.all(self.testInst['tripleMLT'] == 3. * self.testInst['mlt'])
+        return
+
+    def test_setting_data_by_name_single_element(self):
+        """Test setting data by name for a single element."""
+
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        self.testInst['doubleMLT'] = 2.
+        assert np.all(self.testInst['doubleMLT'] == 2.)
+        assert len(self.testInst['doubleMLT']) == len(self.testInst.index)
+
+        self.testInst['nanMLT'] = np.nan
+        assert np.all(np.isnan(self.testInst['nanMLT']))
+        return
+
+    def test_setting_data_by_name_with_meta(self):
+        """Test setting data by name with meta."""
+
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        self.testInst['doubleMLT'] = {'data': 2. * self.testInst['mlt'],
+                                      'units': 'hours',
+                                      'long_name': 'double trouble'}
+        assert np.all(self.testInst['doubleMLT'] == 2. * self.testInst['mlt'])
+        assert self.testInst.meta['doubleMLT'].units == 'hours'
+        assert self.testInst.meta['doubleMLT'].long_name == 'double trouble'
+        return
+
+    @pytest.mark.parametrize("selection, unchanged",
+                             [(slice(0, 3), slice(3, None)),
+                              ([0, 1, 2], slice(3, None)),
+                              (0, slice(1, None))])
+    def test_setting_partial_data(self, selection, unchanged):
+        """Test setting partial data by index and key."""
+
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+
+        if self.testInst.pandas_format:
+            # Save the original data for comparison
+            self.out = self.testInst
+
+            # Get the numeric variable keys
+            num_vars = [var for var in self.testInst.variables if
+                        self.testInst._get_var_type_code(
+                            self.testInst[var].dtype)[0] in ['i', 'u', 'f']]
+            str_vars = [var for var in self.testInst.variables
+                        if var not in num_vars]
+
+            # Set a subset of the data
+            self.testInst[selection, num_vars] = 0
+
+            # Selection of numeric variables should be changed
+            assert np.all(self.testInst[num_vars].values[selection] == 0)
+
+            # String data should remain unchanged
+            assert np.all(self.testInst[str_vars].values[selection]
+                          == self.out[str_vars].values[selection])
+
+            # Other data should be unchanged
+            assert np.all(self.testInst[unchanged] == self.out[unchanged])
+
+        else:
+            pytest.skip("This notation does not make sense for xarray")
+        return
+
+    @pytest.mark.parametrize("changed,fixed",
+                             [(0, slice(1, None)),
+                              ([0, 1, 2, 3], slice(4, None)),
+                              (slice(0, 10), slice(10, None)),
+                              (np.array([0, 1, 2, 3]), slice(4, None)),
+                              (dt.datetime(2009, 1, 1), slice(1, None)),
+                              (slice(dt.datetime(2009, 1, 1),
+                                     dt.datetime(2009, 1, 1, 0, 1)),
+                               slice(dt.datetime(2009, 1, 1, 0, 1, 1), None))])
+    def test_setting_partial_data_by_inputs(self, changed, fixed):
+        """Check that data can be set using each supported index type.
+
+        Parameters
+        ----------
+        changed : index-like parameters
+            Index of values that change during the test.
+        fixed : index-like parameters
+            Index of values that should remain the same during the test.
+
+        """
+
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        self.testInst['doubleMLT'] = 2. * self.testInst['mlt']
+        self.testInst[changed, 'doubleMLT'] = -1
+        assert (self.testInst[fixed, 'doubleMLT']
+                == 2. * self.testInst[fixed, 'mlt']).all
+        assert (self.testInst[changed, 'doubleMLT'] == -1).all
+        return
+
+    def test_modifying_data_inplace(self):
+        """Test modification of data inplace."""
+
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        self.testInst['doubleMLT'] = 2. * self.testInst['mlt']
+        self.testInst['doubleMLT'] += 100
+        assert (self.testInst['doubleMLT']
+                == 2. * self.testInst['mlt'] + 100).all
+        return
+
+    @pytest.mark.parametrize("index", [([0, 1, 2, 3, 4]),
+                                       (np.array([0, 1, 2, 3, 4]))])
+    def test_getting_all_data_by_index(self, index):
+        """Test getting all data by index.
+
+        Parameters
+        ----------
+        index : index-like parameters
+            Index of values to retrieve.
+
+        """
+
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        inst_subset = self.testInst[index]
+        if self.testInst.pandas_format:
+            assert len(inst_subset) == len(index)
+        else:
+            assert inst_subset.sizes[self.xarray_epoch_name] == len(index)
+        return
+
+    @pytest.mark.parametrize("values", [
+        {'help': 'I need somebody'}, {'UTS': 'litte_uts', 'mlt': 'big_mlt'},
+        {'utS': 'uts1', 'help': {'me': 'do', 'things': 'well'}}])
+    def test_unknown_variable_error_renaming(self, values):
+        """Test that unknown variable renaming raises a value error.
+
+        Parameters
+        ----------
+        values : dict
+            Variables to be renamed.  A dict where each key is the current
+            variable and its value is the new variable name.
+
+        """
+
+        # Check for error for unknown variable name
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+
+        # Capture the ValueError and message
+        testing.eval_bad_input(self.testInst.rename, ValueError,
+                               "cannot rename", [values])
+        return
+
+    @pytest.mark.parametrize("lowercase", [True, False])
+    @pytest.mark.parametrize("mapper", [{'uts': 'UTS1'},
+                                        {'uts': 'UTs2', 'mlt': 'Mlt2'},
+                                        {'uts': 'Long Change with spaces'},
+                                        str.upper])
+    def test_basic_variable_renaming(self, lowercase, mapper):
+        """Test new variable names are converted as desired in meta and data.
+
+        Parameters
+        ----------
+        lowercase : bool
+            Instrument variables will be lowercase if True, as mapped if False
+        mapper : dict or func
+            Variables to be renamed.  A dict where each key is the current
+            variable and its value is the new variable name.
+
+        """
+        # Initialize the testing dict
+        if isinstance(mapper, dict):
+            values = mapper
+        else:
+            values = {var: mapper(var) for var in self.testInst.variables}
+
+        # Test single variable
+        self.testInst.load(self.ref_time.year, self.ref_doy)
+        self.testInst.rename(mapper, lowercase_data_labels=lowercase)
+
+        for key in values:
+            # Check for new name in the data and metadata
+            inst_var = values[key].lower() if lowercase else values[key]
+            assert inst_var in self.testInst.variables
+            assert values[key] in self.testInst.meta.keys()
+
+            # Ensure old name not present
+            assert key not in self.testInst.variables
+            assert key not in self.testInst.meta.keys()
+        return

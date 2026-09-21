@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+# Full license can be found in License.md
+# Full author list can be found in CITATION.cff
+#
+# ----------------------------------------------------------------------------
+# Original Authors: pysat development team (c) 2016, Russell Stoneback
+#
+# Modified 2026+
+# This is a U.S. government work and not under copyright protection in the U.S.
+#
+# DISTRIBUTION STATEMENT A: Approved for public release. Distribution is
+# unlimited.
+# ----------------------------------------------------------------------------
+"""Integration tests for gdm.Instrument.
+
+Notes
+-----
+Base class stored here, but tests inherited by test_instrument.py
+
+"""
+
+import logging
+import os
+import tempfile
+
+import pytest
+
+import GeospaceDataManagement as gdm
+
+
+class InstIntegrationTests(object):
+    """Integration tests for `gdm.Instrument`.
+
+    Notes
+    -----
+    Inherited by classes in test_instrument.py.  Setup and teardown methods are
+    specified there.
+
+    See Also
+    --------
+    GeospaceDataManagement.tests.test_instrument
+
+    """
+
+    def test_no_stale_data_paths(self, caplog):
+        """Ensure stale data paths aren't retained by gdm.Instrument.files."""
+
+        if 'file_date_range' in self.testInst.kwargs['list_files']:
+            pytest.skip("Cannot run eval on pds.DatetimeIndex")
+
+        inst_str = repr(self.testInst)
+        inst_str = inst_str.replace('update_files=True', 'update_files=False')
+        self.testInst = eval(inst_str)
+
+        # There should still be a list of files
+        assert len(self.testInst.files.files) > 0
+
+        # Change pysat directory to temporary directory
+        tempdir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+        saved_dir = gdm.params['data_dirs']
+        gdm.params['data_dirs'] = tempdir.name
+
+        # Make another new instrument now that `data_dirs` changed. Normally,
+        # pysat will use whatever directory was stored with the list of
+        # files. However, since the data directory has changed, pysat should
+        # notice the directory is stale and correct the situation.
+        with caplog.at_level(logging.DEBUG, logger='GeospaceDataManagement'):
+            self.testInst = eval(inst_str)
+
+        # Restore pysat directory before any further assertions
+        gdm.params['data_dirs'] = saved_dir
+
+        # Ensure debug message printed for observed change in data directories
+        dstr = ' '.join(['`data_path` found',
+                         'in stored file list is not in',
+                         'current supported `self.data_paths`.',
+                         'Ignoring stored path:'])
+        assert caplog.text.find(dstr)
+
+        # Confirm the right data_path is present. `data_paths` is longer
+        # than tempdir.name by instrument specific directories.
+        lim = len(os.path.normpath(tempdir.name))
+        assert os.path.normpath(self.testInst.files.data_path)[:lim] \
+               == os.path.normpath(tempdir.name)
+        assert len(self.testInst.files.files) > 0
+
+        tempdir.cleanup()
+
+        return
