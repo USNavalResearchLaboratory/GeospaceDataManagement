@@ -99,7 +99,7 @@ jobs:
       run: flake8 . --count --exit-zero --max-complexity=10 --statistics
 
     - name: Test with pytest
-      run: pytest --cov-report xml
+      run: pytest --cov=GeospaceDataManagement --cov-report xml
 
     - name: Trust Coveralls Homebrew tap (Homebrew 6 requirement)
       if: runner.os == 'macOS'

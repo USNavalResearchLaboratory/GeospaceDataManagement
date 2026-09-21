@@ -77,7 +77,6 @@ Source = "https://github.com/USNavalResearchLaboratory/GeospaceDataManagement"
 omit = ["*/instruments/templates/*"]
 
 [tool.pytest.ini_options]
-addopts = "--cov=GeospaceDataManagement"
 markers = [
   "all_inst",
   "download",
