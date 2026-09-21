@@ -1,0 +1,1018 @@
+#!/usr/bin/env python
+# Full license can be found in License.md
+# Full author list can be found in CITATION.cff
+#
+# ----------------------------------------------------------------------------
+# Original Authors: pysat development team (c) 2016, Russell Stoneback
+#
+# Modified 2026+
+# This is a U.S. government work and not under copyright protection in the U.S.
+#
+# DISTRIBUTION STATEMENT A: Approved for public release. Distribution is
+# unlimited.
+# ----------------------------------------------------------------------------
+"""Utilities for file management and parsing file names."""
+
+import collections
+import glob
+import numpy as np
+import os
+import re
+import shutil
+import string
+
+import pandas as pds
+
+from GeospaceDataManagement.utils._core import available_instruments
+from GeospaceDataManagement.utils._core import listify
+from GeospaceDataManagement.utils.time import create_datetime_index
+
+
+# Define hidden support functions
+
+def _init_parse_filenames(files, format_str):
+    """Set the initial output for the file parsing functions.
+
+    Parameters
+    ----------
+    files : list
+        List of files, typically provided by
+        `gdm.utils.files.search_local_system_formatted_filename`.
+    format_str : str
+        Provides the naming pattern of the instrument files and the
+        locations of date information so an ordered list may be produced.
+        Supports all provided string formatting codes though only 'year',
+        'month', 'day', 'hour', 'minute', 'second', 'version', 'revision',
+        and 'cycle' will be used for time and sorting information. For example,
+        `instrument-{year:4d}_{month:02d}-{day:02d}_v{version:02d}.cdf`, or
+        `*-{year:4d}_{month:02d}hithere{day:02d}_v{version:02d}.cdf`
+
+    Returns
+    -------
+    stored : collections.OrderedDict
+        Information parsed from filenames that includes: 'year', 'month', 'day',
+        'hour', 'minute', 'second', 'version', 'revision', and 'cycle', as
+        well as any other user provided template variables. Also
+        includes `files`, an input list of files, and `format_str`.
+    search_dict : dict
+        An output dict with the following keys:
+        - 'search_string' (format_str with data to be parsed replaced with ?)
+        - 'keys' (keys for data to be parsed)
+        - 'type' (type of data expected for each key to be parsed)
+        - 'lengths' (string length for data to be parsed)
+        - 'string_blocks' (the filenames are broken into fixed width segments).
+
+    See Also
+    --------
+    GeospaceDataManagement.utils.files.parse_fixed_width_filenames
+    GeospaceDataManagement.utils.files.parse_delimited_filenames
+    GeospaceDataManagement.utils.files.construct_searchstring_from_format
+
+    """
+    # Create storage for data to be parsed from filenames
+    ordered_keys = ['year', 'month', 'day', 'hour', 'minute', 'second',
+                    'version', 'revision', 'cycle']
+    stored = collections.OrderedDict({kk: None for kk in ordered_keys})
+
+    # Only define search dictionary if there are files to search
+    if len(files) == 0:
+        # Include keys that should only be added at the end, if there are no
+        # files to process
+        stored['format_str'] = format_str
+        stored['files'] = []
+        search_dict = dict()
+    else:
+        # Parse format string to get information needed to parse filenames
+        search_dict = construct_searchstring_from_format(format_str,
+                                                         wildcard=False)
+
+        # Add non-standard keys
+        for key in search_dict['keys']:
+            if key not in stored:
+                stored[key] = None
+
+    return stored, search_dict
+
+
+def _finish_parse_filenames(stored, files, format_str, bad_files):
+    """Reshape and finalize the output for the file parsing functions.
+
+    Parameters
+    ----------
+    stored : collections.OrderedDict
+        Information parsed from filenames that includes: 'year', 'month', 'day',
+        'hour', 'minute', 'second', 'version', 'revision', and 'cycle', as
+        well as any other user provided template variables.
+    files : list
+        List of files, typically provided by
+        `gdm.utils.files.search_local_system_formatted_filename`.
+    format_str : str
+        Provides the naming pattern of the instrument files and the
+        locations of date information so an ordered list may be produced.
+        Supports all provided string formatting codes though only 'year',
+        'month', 'day', 'hour', 'minute', 'second', 'version', 'revision',
+        and 'cycle' will be used for time and sorting information. For example,
+        `instrument-{year:4d}_{month:02d}-{day:02d}_v{version:02d}.cdf`, or
+        `*-{year:4d}_{month:02d}hithere{day:02d}_v{version:02d}.cdf`
+    bad_files : list
+        List of indices for files with names that do not fit the requested
+        format, or an empty list if all are good.
+
+    Returns
+    -------
+    stored : collections.OrderedDict
+        Information parsed from filenames that includes: 'year', 'month', 'day',
+        'hour', 'minute', 'second', 'version', 'revision', and 'cycle', as
+        well as any other user provided template variables. Also
+        includes `files`, an input list of files, and `format_str`.
+
+    See Also
+    --------
+    GeospaceDataManagement.utils.files.parse_fixed_width_filenames
+    GeospaceDataManagement.utils.files.parse_delimited_filenames
+
+    """
+    # Change the bad file index list to a good file index list
+    good_files = [i for i in range(len(files)) if i not in bad_files]
+
+    # Convert to numpy arrays
+    for key in stored.keys():
+        if stored[key] is not None:
+            # Get the data type
+            dtype = type(stored[key][0])
+
+            # Cast the good data as an array of the desired type and select
+            # only the values with good files
+            stored[key] = np.array(stored[key])[good_files].astype(dtype)
+
+    # Include files and file format in output
+    stored['format_str'] = format_str
+    if len(bad_files) == 0:
+        stored['files'] = files
+    else:
+        stored['files'] = list(np.array(files)[good_files])
+
+    return stored
+
+
+# Define file utility functions
+
+def process_parsed_filenames(stored, two_digit_year_break=None):
+    """Create a Files pandas Series of filenames from a formatted dict.
+
+    Parameters
+    ----------
+    stored : collections.orderedDict
+        Ordered dictionary produced by `parse_fixed_width_filenames` or
+        `parse_delimited_filenames`, containing date, time, version, and
+        other information extracted from the filenames.
+    two_digit_year_break : int or NoneType
+        If filenames only store two digits for the year, then
+        '1900' will be added for years >= two_digit_year_break
+        and '2000' will be added for years < two_digit_year_break.
+        If None, then four-digit years are assumed. (default=None)
+
+    Returns
+    -------
+    pds.Series
+        Series, indexed by datetime, with file strings
+
+    Notes
+    -----
+    If two files have the same date and time information in the filename then
+    the file with the higher version/revision/cycle is used. Series returned
+    only has one file per datetime. Version is required for this filtering,
+    revision and cycle are optional.
+
+    See Also
+    --------
+    GeospaceDataManagement.utils.files.parse_fixed_width_filenames,
+    GeospaceDataManagement.utils.files.parse_delimited_filenames
+
+    """
+
+    search_dict = construct_searchstring_from_format(stored['format_str'])
+    keys = search_dict['keys']
+
+    if len(stored['files']) > 0:
+        # Deal with the possibility of two digit years. Years above
+        # or equal to break are considered to be 1900+, while
+        # years below break are considered to be 2000+
+        if two_digit_year_break is not None:
+            idx, = np.where(np.array(stored['year'])
+                            >= two_digit_year_break)
+            stored['year'][idx] = stored['year'][idx] + 1900
+            idx, = np.where(np.array(stored['year']) < two_digit_year_break)
+            stored['year'][idx] = stored['year'][idx] + 2000
+
+        # Need to sort the information for things to work
+        rec_arr = [stored[key] for key in keys]
+        rec_arr.append(stored['files'])
+
+        # Sort all arrays by creating a sortable records array
+        # withs keys corresponding to the files
+        val_keys = keys + ['files']
+        rec_arr = np.rec.fromarrays(rec_arr, names=val_keys)
+        rec_arr.sort(order=val_keys, axis=0)
+
+        # Pull out sorted info
+        for key in keys:
+            stored[key] = rec_arr[key]
+        files = rec_arr['files']
+
+        # Add hour and minute information to 'second'
+        if stored['second'] is None:
+            stored['second'] = np.zeros(len(files))
+        if stored['hour'] is not None:
+            stored['second'] += 3600 * stored['hour']
+        if stored['minute'] is not None:
+            stored['second'] += 60 * stored['minute']
+
+        # The version shouldn't be set to zero, it is required to remove
+        # duplicate datetimes
+        if stored['revision'] is None:
+            stored['revision'] = np.zeros(len(files))
+        if stored['cycle'] is None:
+            stored['cycle'] = np.zeros(len(files))
+
+        index = create_datetime_index(year=stored['year'],
+                                      month=stored['month'],
+                                      day=stored['day'],
+                                      uts=stored['second'])
+
+        # If version, revision, and cycle are supplied, use these parameters
+        # to weed out files that have been replaced with updated versions.
+        # First, check for duplicate index times
+        dups = index[index.duplicated()].unique()
+        if (len(dups) > 0) and (stored['version'] is not None):
+            # We have duplicates, keep the highest version/revision combo
+            version = pds.Series(stored['version'], index=index)
+            revision = pds.Series(stored['revision'], index=index)
+            cycle = pds.Series(stored['cycle'], index=index)
+            revive = version * 100000. + revision + cycle * 1e-5
+            frame = pds.DataFrame({'files': files, 'revive': revive,
+                                   'time': index}, index=index)
+            frame = frame.sort_values(by=['time', 'revive'],
+                                      ascending=[True, False])
+            frame = frame.drop_duplicates(subset='time', keep='first')
+
+            return frame['files']
+        else:
+            return pds.Series(files, index=index).sort_index()
+    else:
+        return pds.Series(None, dtype='object')
+
+
+def parse_fixed_width_filenames(files, format_str):
+    """Extract specified info from a list of files with a fixed name width.
+
+    Parameters
+    ----------
+    files : list
+        List of files, typically provided by
+        `gdm.utils.files.search_local_system_formatted_filename`.
+    format_str : str
+        Provides the naming pattern of the instrument files and the
+        locations of date information so an ordered list may be produced.
+        Supports all provided string formatting codes though only 'year',
+        'month', 'day', 'hour', 'minute', 'second', 'version', 'revision',
+        and 'cycle' will be used for time and sorting information. For example,
+        `instrument-{year:4d}_{month:02d}-{day:02d}_v{version:02d}.cdf`, or
+        `*-{year:4d}_{month:02d}hithere{day:02d}_v{version:02d}.cdf`
+
+    Returns
+    -------
+    stored : collections.OrderedDict
+        Information parsed from filenames that includes: 'year', 'month', 'day',
+        'hour', 'minute', 'second', 'version', 'revision', and 'cycle', as
+        well as any other user provided template variables. Also
+        includes `files`, an input list of files, and `format_str`.
+
+    Notes
+    -----
+    The function uses the lengths of the fixed characters within `format_str`,
+    as well as the supplied lengths for template variables, to determine
+    where to parse out information. Thus, support for the wildcard '*' is
+    limited to locations before the first template variable.
+
+    See Also
+    --------
+    GeospaceDataManagement.utils.files.search_local_system_formatted_filename
+
+    """
+
+    # Create storage for data to be parsed from filenames
+    stored, search_dict = _init_parse_filenames(files, format_str)
+
+    if len(files) == 0:
+        return stored
+
+    # Determine the locations the date/version information in a filename is
+    # stored and use these indices to slice out date from filenames.
+    idx = 0
+    begin_key = []
+    end_key = []
+    for i, snip in enumerate(search_dict['string_blocks']):
+        idx += len(snip)
+        if i < len(search_dict['lengths']):
+            begin_key.append(idx)
+            idx += search_dict['lengths'][i]
+            end_key.append(idx)
+    max_len = idx
+
+    # Setting up negative indexing to pick out filenames
+    key_str_idx = [np.array(begin_key, dtype=np.int64) - max_len,
+                   np.array(end_key, dtype=np.int64) - max_len]
+
+    # Need to parse out dates for datetime index
+    bad_files = []
+    for i, temp in enumerate(files):
+        for j, key in enumerate(search_dict['keys']):
+            if key_str_idx[1][j] == 0:
+                # Last element is a variable to be parsed out
+                val = temp[key_str_idx[0][j]:]
+            else:
+                val = temp[key_str_idx[0][j]:key_str_idx[1][j]]
+
+            # Cast the data value, if possible
+            if search_dict['type'][j] is not None:
+                try:
+                    val = search_dict['type'][j](val)
+                except ValueError:
+                    # The type is wrong, exclude this file
+                    bad_files.append(i)
+
+            # Save the parsed variable for this key and file
+            if stored[key] is None:
+                stored[key] = [val]
+            else:
+                stored[key].append(val)
+
+    # Convert to numpy arrays and add additional information to output
+    stored = _finish_parse_filenames(stored, files, format_str, bad_files)
+
+    return stored
+
+
+def parse_delimited_filenames(files, format_str, delimiter):
+    """Extract specified info from a list of files using a delimiter.
+
+    Will parse file using `delimiter` though the function does not require
+    every parsed item to be a variable, and more than one variable
+    may be within a parsed section. Thus, the main practical
+    difference with `parse_fixed_width_filenames` is more support for
+    the use of the wildcard '*' within `format_str`. Overuse
+    of the '*' wildcard increases the probability of false positive matches
+    if there are multiple instrument files in the directory.
+
+    Parameters
+    ----------
+    files : list
+        List of files, typically provided by
+        `gdm.utils.files.search_local_system_formatted_filename`.
+    format_str : str
+        Provides the naming pattern of the instrument files and the
+        locations of date information so an ordered list may be produced.
+        Supports all provided string formatting codes though only 'year',
+        'month', 'day', 'hour', 'minute', 'second', 'version', 'revision',
+        and 'cycle' will be used for time and sorting information. For example,
+        `*_{year:4d}_{month:02d}_{day:02d}_*_v{version:02d}_*.cdf`
+    delimiter : str
+        Delimiter string upon which files will be split (e.g., '.')
+
+    Returns
+    -------
+    stored : collections.OrderedDict
+        Information parsed from filenames that includes: 'year', 'month', 'day',
+        'hour', 'minute', 'second', 'version', 'revision', and 'cycle', as
+        well as any other user provided template variables. Also
+        includes `files`, an input list of files, and `format_str`.
+
+    Notes
+    -----
+    The '*' wildcard is supported when leading, trailing, or wholly contained
+    between delimiters, such as 'data_name-{year:04d}-*-{day:02d}.txt',
+    or '*-{year:04d}*-*-{day:02d}*', where '-' is the delimiter.
+    There can not be a mixture of a template variable and '*' without a
+    delimiter in between, unless the '*' occurs after the variables. The
+    '*' should not be used to replace the delimited character in the filename.
+
+    See Also
+    --------
+    GeospaceDataManagement.utils.files.search_local_system_formatted_filename
+
+    """
+
+    # Create storage for data to be parsed from filenames
+    stored, search_dict = _init_parse_filenames(files, format_str)
+
+    if len(files) == 0:
+        return stored
+
+    # Going to parse the string on the delimiter. It is possible that other
+    # regions have the delimiter but aren't going to be parsed out.
+    # Reconstruct string from `snips` and use `{}` in place of `keys` and
+    # work from that.
+    recon = [''] * (len(search_dict['string_blocks'])
+                    + len(search_dict['keys']))
+    for i, item in enumerate(search_dict['string_blocks']):
+        recon[2 * i] = item
+    for i, item in enumerate(search_dict['keys']):
+        recon[2 * i + 1] = '{}'
+    recon = ''.join(recon)
+    split_recon = recon.split(delimiter)
+
+    # Parse out template variable information from reconstructed name.
+    # Store a list of indexes for locations to start pulling out
+    # variable information. For performance reasons, only want to do this
+    # once for `split_recon`.
+    split_idx = []
+    for i, rname in enumerate(split_recon):
+        loop_rname = rname
+
+        while True:
+            sidx = loop_rname.find('{}')
+            if sidx < 0:
+                # No template variables to parse
+                split_idx.append(None)
+                break
+            else:
+                # Found template variable marker. Remove marker and store
+                # location.
+                loop_rname = loop_rname[sidx + 2:]
+                split_idx.append(sidx)
+
+    # Parse out template variable information from each filename. Use the
+    # indices calculated above. First, prep memory.
+    for key in search_dict['keys']:
+        if stored[key] is None:
+            stored[key] = []
+
+    bad_files = list()
+    for ifile, temp in enumerate(files):
+        split_name = temp.split(delimiter)
+        idx = 0
+        loop_split_idx = split_idx
+        for i, sname in enumerate(split_name):
+            loop_sname = sname
+            for j, sidx in enumerate(loop_split_idx):
+                if sidx is not None:
+                    # Pull out value from filename and shorten str.
+                    val = loop_sname[sidx:sidx + search_dict['lengths'][idx]]
+                    loop_sname = loop_sname[sidx + search_dict['lengths'][idx]:]
+
+                    # Cast the value as the desired data type, if not possible
+                    # identify a bad file
+                    if search_dict['type'][idx] is not None:
+                        try:
+                            val = search_dict['type'][idx](val)
+                        except ValueError:
+                            # The type is wrong, exclude this file
+                            bad_files.append(ifile)
+
+                    # Store parsed info and increment key index
+                    stored[search_dict['keys'][idx]].append(val)
+                    idx += 1
+                else:
+                    # No variable to be parsed, remove indices from
+                    # `loop_split_idx` already used.
+                    loop_split_idx = loop_split_idx[j + 1:]
+                    break
+
+    # Convert to numpy arrays and add additional information to output
+    stored = _finish_parse_filenames(stored, files, format_str, bad_files)
+
+    return stored
+
+
+def construct_searchstring_from_format(format_str, wildcard=False):
+    """Parse format file string and returns string formatted for searching.
+
+    Each variable in the string template is replaced with an appropriate
+    number of '?' based upon the provided length of the data.
+
+    Parameters
+    ----------
+    format_str : str
+        Provides the naming pattern of the instrument files and the
+        locations of date information so an ordered list may be produced.
+        For example,
+        `instrument_{year:04d}{month:02d}{day:02d}_v{version:02d}.cdf`
+    wildcard : bool
+        If True, replaces each '?' sequence that would normally
+        be returned with a single '*'. (default=False)
+
+    Returns
+    -------
+    out_dict : dict
+        An output dict with the following keys:
+        - 'search_string' (format_str with data to be parsed replaced with ?)
+        - 'keys' (keys for data to be parsed)
+        - 'type' (type of data expected for each key to be parsed)
+        - 'lengths' (string length for data to be parsed)
+        - 'string_blocks' (the filenames are broken into fixed width segments).
+
+    Raises
+    ------
+    ValueError
+        If a filename template isn't provided in `format_str`
+
+    Notes
+    -----
+    The '?' may be used to indicate a set number of spaces for a variable
+    part of the name that need not be extracted.
+    `cnofs_cindi_ivm_500ms_{year:4d}{month:02d}{day:02d}_v??.cdf`
+
+    A standards compliant filename can be constructed by adding the first
+    element from `string_blocks`, then the first item in `keys`, and iterating
+    that alternating pattern until all items are used.
+
+    This is the first function employed by `gdm.Files.from_os`.
+
+    If no type is supplied for datetime parameters, int will be used.
+
+    """
+
+    out_dict = {'search_string': '', 'keys': [], 'type': [], 'lengths': [],
+                'string_blocks': []}
+    type_dict = {'s': str, 'b': np.int64, 'c': np.int64, 'd': np.int64,
+                 'o': np.int64, 'e': np.float64, 'E': np.float64,
+                 'f': np.float64, 'F': np.float64, 'g': np.float64,
+                 'G': np.float64}
+    int_keys = ['year', 'month', 'day', 'hour', 'minute', 'second',
+                'microsecond']
+
+    if format_str is None:
+        raise ValueError("Must supply a filename template (format_str).")
+
+    # Parse format string to figure out how to construct the search string
+    # to identify files in the filesystem
+    form = string.Formatter()
+    for snip in form.parse(format_str):
+        # Collect all of the format keywords. Replace them in the string with
+        # the '?' wildcard. The number of '?'s corresponds to the length of
+        # data to be parsed. The length is obtained from format keywords so
+        # that we know later on where to parse information out from.
+        out_dict['search_string'] += snip[0]
+        out_dict['string_blocks'].append(snip[0])
+
+        if snip[1] is not None:
+            out_dict['keys'].append(snip[1])
+
+            if snip[2] is None:
+                out_dict['type'].append(snip[2])
+            else:
+                snip_type = snip[2][-1]
+                if snip_type in type_dict.keys():
+                    out_dict['type'].append(type_dict[snip_type])
+                elif snip[1] in int_keys:
+                    out_dict['type'].append(np.int64)
+                else:
+                    out_dict['type'].append(None)
+
+            # Try and determine formatting width
+            fwidths = re.findall(r'\d+', snip[2])
+
+            if fwidths:
+                # There are items, try and grab width
+                for fwidth in fwidths:
+                    # Make sure there is truly something there
+                    if fwidth != 0:
+                        # Store length and add to the search string
+                        out_dict['lengths'].append(np.int64(fwidth))
+                        if not wildcard:
+                            val = '?' * out_dict['lengths'][-1]
+                            out_dict['search_string'] += val
+                        else:
+                            out_dict['search_string'] += '*'
+                        break
+            else:
+                raise ValueError(
+                    ''.join(["Couldn't determine formatting width, check ",
+                             "formatting length specification (e.g., ",
+                             "{day:03d} for day of year)."]))
+
+    return out_dict
+
+
+def search_local_system_formatted_filename(data_path, search_str):
+    """Parse format file string and returns string formatted for searching.
+
+    Parameters
+    ----------
+    data_path : str
+        Top level directory to search files for. This directory is provided by
+        GeospaceDataManagement to the instrument_module.list_files functions as
+        `data_path`.
+    search_str : str
+        String used to search for local files. For example,
+        `cnofs_cindi_ivm_500ms_????????_v??.cdf` or `inst-name-*-v??.cdf`
+        Typically this input is provided by
+        `files.construct_searchstring_from_format`.
+
+    Returns
+    -------
+    files : list
+        list of files matching the specified file format
+
+    Notes
+    -----
+    The use of ?s (1 ? per character) rather than the full wildcard * provides
+    a more specific filename search string that limits the false positive rate.
+
+    """
+
+    # Perform local file search
+    abs_search_str = os.path.join(data_path, search_str)
+    files = glob.glob(abs_search_str)
+
+    # Remove the specified data_path portion
+    files = [sfile.split(data_path)[-1] for sfile in files]
+
+    # Return the desired filename information
+    return files
+
+
+def update_data_directory_structure(new_template, test_run=True,
+                                    full_breakdown=False,
+                                    remove_empty_dirs=False):
+    """Update GeospaceDataManagement data directory structure to match template.
+
+    Parameters
+    ----------
+    new_template : str
+        New directory template string. The default value for
+        GeospaceDataManagement is
+         `os.path.join(('{platform}', '{name}', '{tag}', '{inst_id}'))`
+    test_run : bool
+        If True, a printout of all proposed changes will be made, but the
+        directory changes will not be enacted. (default=True)
+    full_breakdown : bool
+        If True, a full path for every file is printed to terminal.
+        (default=False)
+    remove_empty_dirs : bool
+        If True, all directories that had gdm.Instrument data moved
+        to another location and are now empty are deleted. Traverses
+        the directory chain up to the top-level directories in
+        `gdm.params['data_dirs']`. (default=False)
+
+    Notes
+    -----
+    Translates all of GeospaceDataManagement's managed science files to a new
+    directory structure. By default, GeospaceDataManagement uses the template
+    string stored in gdm.params['directory_format'] to organize files. This
+    method makes it possible to transition an existing GeospaceDataManagement
+    installation so it works with the supplied new template.
+
+    After updating the data directory structures users should nominally
+    assign `new_template` as the directory format via
+    ::
+
+        gdm.params['directory_format'] = new_template
+
+    """
+
+    # Import required here to avoid circular import
+    from GeospaceDataManagement import Instrument
+
+    # Get a list of supported instruments
+    insts = available_instruments()
+
+    if test_run:
+        print('Performing a test run. No files will be moved.\n')
+
+    if len(insts.keys()) == 0:
+        ostr = ''.join(('No registered instruments detected. Please register ',
+                        'supporting instrument modules using the ',
+                        '`GeospaceDataManagement.utils.registry` module.'))
+        print(ostr)
+
+    for platform in insts.keys():
+        for name in insts[platform].keys():
+            for inst_id in insts[platform][name]['inst_ids_tags'].keys():
+                tkeys = insts[platform][name]['inst_ids_tags'][inst_id].keys()
+                for tag in tkeys:
+
+                    # Get a list of current Instrument files. Some Instruments
+                    # construct filenames so we start by taking only the
+                    # unique ones.
+                    inst = Instrument(platform=platform, name=name,
+                                      inst_id=inst_id, tag=tag,
+                                      update_files=True)
+                    flist = inst.files.files.values
+                    flist = np.unique(flist)
+
+                    # Existing full directory path, including template.
+                    curr_path = inst.files.data_path
+
+                    # Figure out which top-level directory these files are in by
+                    # removing existing directory template information.
+                    # GeospaceDataManagement supports multiple paths so we need
+                    # to get which of those this particular instrument uses.
+                    currdir = inst.files.data_path.split(
+                        inst.files.sub_dir_path)[0]
+
+                    # Create instrument with new information
+                    new_inst = Instrument(platform=platform, name=name,
+                                          inst_id=inst_id, tag=tag,
+                                          update_files=False,
+                                          directory_format=new_template)
+
+                    # Get new formatted directory template
+                    subdir = new_inst.files.sub_dir_path
+
+                    # Make new path using correct top_level data directory but
+                    # with new template. new_inst won't find files and thus
+                    # defaults to the first of all gdm data_dirs though
+                    # we know better.
+                    new_path = os.path.join(currdir, subdir, '')
+                    print(' '.join(('Working on Instrument:', platform, name,
+                                    tag, inst_id)))
+                    if curr_path == new_path:
+                        print('No change in directory needed.\n')
+                        break
+
+                    print('Current path :  ' + curr_path)
+                    print('Proposed path:  ' + new_path)
+
+                    # Construct full paths in lists for old and new filenames
+                    old_files = [os.path.join(inst.files.data_path, ifile)
+                                 for ifile in flist]
+
+                    # Determine which of these files exist.
+                    old_exists = [os.path.isfile(ofile) for ofile in old_files]
+                    idx, = np.where(old_exists)
+
+                    if len(idx) == 0:
+                        # If none of the files actually exists, likely that
+                        # instruments.methods.general.list_files is appending
+                        # a date to the end of the filename.
+                        exists = [os.path.isfile(ofile[:-11]) for ofile in
+                                  old_files]
+                        if np.all(exists):
+                            flist = [ifile[:-11] for ifile in flist]
+                            flist = np.unique(flist)
+                            old_files = [os.path.join(inst.files.data_path,
+                                                      ifile)
+                                         for ifile in flist]
+                        else:
+                            # Files don't exist as written and taking of
+                            # a trailing date didn't fix everything.
+                            raise ValueError()
+                    elif len(idx) < len(old_files):
+                        ostr = ' '.join(('{:d} out of {:d} expected files',
+                                         'were not found. It is likely',
+                                         'that', platform, name,
+                                         'is using a combination of internally',
+                                         'modified file names and regular ',
+                                         'names and must be moved manually.\n'))
+                        ostr = ostr.format(len(idx), len(old_files))
+                        print(ostr)
+                        break
+
+                    # User feedback
+                    if len(old_files) == 0:
+                        print('No files found.\n')
+                    else:
+                        print('{:d} files located.\n'.format(
+                            len(old_files)))
+
+                    # Based on the files that do exist, construct new
+                    # path names with the updated directory template.
+                    new_files = [os.path.join(currdir, subdir, ifile)
+                                 for ifile in flist]
+
+                    # Some instruments may have additional directories below
+                    # those expected by gdm. Get a list of all those unique
+                    # directories and create as needed.
+                    new_dirs = [os.path.split(ifile)[0] for ifile in new_files]
+                    new_dirs = np.unique(new_dirs)
+                    if not test_run:
+                        for ndir in new_dirs:
+                            # Create needed directories if actually moving files
+                            check_and_make_path(ndir)
+
+                    # Ready to iterate through list of files and move them
+                    for ofile, nfile in zip(old_files, new_files):
+                        if full_breakdown:
+                            # Print the proposed changes so user may verify
+                            ostr = ''.join(('Will move: ', ofile, '\n',
+                                            '       to: ', nfile))
+                            print(ostr)
+
+                        if not test_run:
+                            # Move files if not in test mode
+                            if not os.path.isfile(nfile):
+                                # Move the file now
+                                shutil.move(ofile, nfile)
+                            else:
+                                # New file
+                                ostr = ''.join(nfile, ' already exists.')
+                                print(ostr)
+
+                    if full_breakdown and (len(old_files) > 0):
+                        # Sometimes include a newline to maintain consistent
+                        # line spacing.
+                        print('')
+
+                    if len(old_files) > 0:
+                        # No missing files and there are actually
+                        # files on the disk to deal with.
+
+                        # Get new list of files from Instrument
+                        new_inst = Instrument(platform=platform, name=name,
+                                              inst_id=inst_id, tag=tag,
+                                              update_files=True,
+                                              directory_format=new_template)
+
+                        # Check on number of files before and after
+                        nnew = len(new_inst.files.files)
+                        nold = len(inst.files.files)
+                        if not test_run:
+                            if nnew != nold:
+                                estr = ' '.join(('Number of files before',
+                                                 repr(nold), 'and',
+                                                 'after', repr(nnew),
+                                                 'not the same.',
+                                                 'Something has gone wrong for',
+                                                 platform, name, tag, inst_id))
+                                raise ValueError(estr)
+
+                            print(' '.join(('All', platform, name, tag, inst_id,
+                                            'files moved and accounted for.',
+                                            '\n')))
+
+                            # Number of files checks out. Time to remove old
+                            # directories if there are no real files in there.
+                            # First, get full directory path of previous inst
+                            wpath = inst.files.data_path
+                            while wpath != currdir and (len(wpath)
+                                                        > len(currdir)):
+                                # Only continue while we are at a level
+                                # lower than the top-level gdm data directory.
+                                if len(os.listdir(wpath)) == 0:
+                                    # Directory is empty, remove it.
+                                    print(''.join((wpath, ' is empty and ',
+                                                   'could be removed.')))
+                                    if remove_empty_dirs:
+                                        shutil.rmtree(wpath)
+                                        print(''.join(('Removing: ', wpath)))
+                                else:
+                                    print(''.join(('Directory is not empty: ',
+                                                   wpath, '\nEnding cleanup.',
+                                                   '\n')))
+                                    break
+
+                                # Take off last path and start working up
+                                # the directory chain.
+                                wpath = os.path.sep.join(wpath.split(
+                                    os.path.sep)[:-2])
+                            else:
+                                print('\n')
+
+    return
+
+
+def check_and_make_path(path, expand_path=False):
+    """Check if path exists and create it if needed.
+
+    Parameters
+    ----------
+    path : str
+        String specifying a directory path without any file names. All
+        directories needed to create the full path will be created.
+    expand_path : bool
+        If True, input `path` will be processed through `os.path.expanduser`
+        (accounting for `~` and `~user` constructs, if $HOME and user are known)
+        and `os.path.expandvars` (accounting for environment variables)
+
+    Returns
+    -------
+    made_dir : bool
+        True, if new directory made. False, if path already existed.
+
+    Raises
+    ------
+    ValueError
+        If an invalid path is supplied.
+    RuntimeError
+        If the input path and internally constructed paths differ.
+
+    See Also
+    --------
+    os.path.expanduser, os.path.expandvars
+
+    """
+
+    if expand_path:
+        # Account for home, user, and environment variables references
+        path = os.path.expanduser(path)
+        path = os.path.expandvars(path)
+
+    if len(path) == 0:
+        # The user wants to write to the current directory
+        path = os.getcwd()
+
+    # Set the output
+    made_dir = not os.path.exists(path)
+
+    if made_dir:
+        # The directory(ies) need to be made, check to see whether or not each
+        # level exists before attempting to make each directory in the path
+        root_path, local_dir = os.path.split(path)
+
+        # Check that we have a potentially valid path
+        if len(root_path) == 0:
+            raise ValueError('Invalid path specification.')
+
+        # Iterate through given path until we hit a directory that exists.
+        make_dir = list()
+        while not os.path.exists(root_path):
+            if len(local_dir) > 0:
+                # Avoid case where input is path='/stuff/level/'.
+                # The trailing '/' leads to a local_dir=''
+                make_dir.append(local_dir)
+            root_path, local_dir = os.path.split(root_path)
+
+            # Check that we continue to have a remotely valid path
+            if len(root_path) == 0:
+                raise ValueError('Invalid path specification.')
+
+        if len(local_dir) > 0:
+            # Avoid case where input is path='/stuff/level/'.
+            # The trailing '/' leads to a local_dir=''
+            make_dir.append(local_dir)
+
+        while len(make_dir) > 0:
+            local_dir = make_dir.pop()
+            root_path = os.path.join(root_path, local_dir)
+            if local_dir != '..' and local_dir != '.':
+                # Deal with case of path='... /path1/../final_path' or
+                # path='... /path1/./final_path'
+                os.mkdir(root_path)
+
+        if os.path.normpath(root_path) != os.path.normpath(path):
+            estr = ''.join(['Desired and constructed paths unexpectedly differ',
+                            '. Please post an issue at https://github.com/US',
+                            'NavalResearchLaboratory/GeospaceDataManagement/',
+                            'issues'])
+            raise RuntimeError(estr)
+
+    return made_dir
+
+
+def get_file_information(paths, root_dir=''):
+    """Retrieve system statistics for the input path(s).
+
+    Parameters
+    ----------
+    paths : str or list
+        Full pathnames of files to get attribute information.
+    root_dir : str
+        Common root path shared by all paths, if any. (default='')
+
+    Returns
+    -------
+    file_info : dict
+        Keyed by file attribute, which uses names that mirror or are expanded
+        upon those used by `os.stat`. Each attribute maps to a list
+        of values for each file in `paths`.
+
+    See Also
+    --------
+    os.stat
+
+    """
+
+    # Ensure the input is a list
+    paths = listify(paths)
+
+    # Mapping of output key to the attribute name returned by `os.stat`
+    attrs = {'content_modified_time': 'st_mtime', 'mode': 'st_mode',
+             'size': 'st_size', 'inode': 'st_ino', 'device': 'st_dev',
+             'nlink': 'st_nlink', 'uid': 'st_uid', 'gid': 'st_gid',
+             'last_access_time': 'st_atime',
+             'metadata_update_time': 'st_ctime'}
+
+    # Initiliaze output dictionary.
+    file_info = {}
+    for attr in attrs.keys():
+        file_info[attr] = []
+
+    # Add common root directory to paths, if supplied.
+    if root_dir != '':
+        for i, path in enumerate(paths):
+            paths[i] = os.path.join(root_dir, path)
+
+    # Collect file attributes and store.
+    for path in paths:
+        info = os.stat(path)
+        for attr in attrs.keys():
+            file_info[attr].append(getattr(info, attrs[attr]))
+
+    # Convert times to datetimes.
+    for attr in ['content_modified_time', 'last_access_time',
+                 'metadata_update_time']:
+        file_info[attr] = pds.to_datetime(file_info[attr], unit='s')
+
+    return file_info
