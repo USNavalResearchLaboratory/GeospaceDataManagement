@@ -187,7 +187,7 @@ class Parameters(object):
 
         """
         dir_path = os.path.split(self.file_path)[0]
-        out_str = ''.join(('GeospaceDataManamgement._params.Parameters',
+        out_str = ''.join(('GeospaceDataManagement._params.Parameters',
                            '(path=r"', dir_path, '")'))
         return out_str
 
@@ -207,10 +207,10 @@ class Parameters(object):
 
         """
 
-        # Get typical GeospaceDataManamgement parameters (those with defaults)
+        # Get typical GeospaceDataManagement parameters (those with defaults)
         typical = list(self.defaults.keys())
 
-        # Get GeospaceDataManamgement parameters without working defaults
+        # Get GeospaceDataManagement parameters without working defaults
         pparams = self.non_defaults
 
         # Get any additional parameters set by the user
@@ -219,10 +219,10 @@ class Parameters(object):
         users = [key for key in self.data.keys() if key not in both]
 
         # Print the short output
-        out_str = "GeospaceDataManamgement Parameters object\n"
+        out_str = "GeospaceDataManagement Parameters object\n"
         out_str += "----------------------------------------\n"
-        out_str += "Tracking {:d} GeospaceDataManamgement settings\n".format(
-            len(typical))
+        out_str += "Tracking {:d} GeospaceDataManagement ".format(len(typical))
+        out_str += "Parameters settings\n"
         out_str += "Tracking {:d} settings (non-default)\n".format(len(pparams))
         out_str += "Tracking {:d} user values\n".format(len(users))
 
@@ -255,9 +255,9 @@ class Parameters(object):
             self._set_data_dirs(value)
 
         elif key == 'user_modules':
-            estr = ''.join(('The GeospaceDataManamgement.utils.registry ',
+            estr = ''.join(('The GeospaceDataManagement.utils.registry ',
                             'submodule has methods designed to build and work',
-                            ' with this GeospaceDataManamgement attribute. ',
+                            ' with this GeospaceDataManagement attribute. ',
                             '`user_modules` is not modifiable here.'))
             raise ValueError(estr)
         else:
@@ -306,11 +306,11 @@ class Parameters(object):
         return
 
     def clear_and_restart(self):
-        """Clear all stored settings and sets GeospaceDataManamgement defaults.
+        """Clear all stored settings and sets GeospaceDataManagement defaults.
 
         Notes
         -----
-        GeospaceDataManamgement parameters without a default value are set to []
+        GeospaceDataManagement parameters without a default value are set to []
 
         """
 
@@ -327,11 +327,11 @@ class Parameters(object):
         return
 
     def restore_defaults(self):
-        """Restore default GeospaceDataManamgement parameters.
+        """Restore default GeospaceDataManagement parameters.
 
         Notes
         -----
-        Does not modify any stored custom user keys or GeospaceDataManamgement
+        Does not modify any stored custom user keys or GeospaceDataManagement
         parameters without a default value.
 
         """

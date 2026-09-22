@@ -21,7 +21,7 @@ import shutil
 import tempfile
 
 # The first two imports are required for re-importing and eval statements
-import GeospaceDataManagement as gdm
+import GeospaceDataManagement
 from GeospaceDataManagement._params import Parameters
 from GeospaceDataManagement.tests.classes.cls_ci import CICleanSetup
 from GeospaceDataManagement.utils import testing
@@ -33,10 +33,10 @@ class TestBasics(object):
     def setup_method(self):
         """Set up the unit test environment for each method."""
         # Store current GeospaceDataManagement directory
-        self.stored_params = copy.deepcopy(gdm.params)
+        self.stored_params = copy.deepcopy(GeospaceDataManagement.params)
 
         # Set up default values
-        gdm.params.restore_defaults()
+        GeospaceDataManagement.params.restore_defaults()
 
         # Get a temporary directory
         self.tempdir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
@@ -44,9 +44,9 @@ class TestBasics(object):
 
     def teardown_method(self):
         """Clean up the unit test environment after each method."""
-        gdm.params = copy.deepcopy(self.stored_params)
-        gdm.params.store()
-        reload(gdm)
+        GeospaceDataManagement.params = copy.deepcopy(self.stored_params)
+        GeospaceDataManagement.params.store()
+        reload(GeospaceDataManagement)
         os.chdir(self.wd)
         self.tempdir.cleanup()
 
@@ -59,7 +59,7 @@ class TestBasics(object):
                               (os.path.join('.', ''), ['.']),
                               (['.', '.'], None)])
     def test_set_data_dirs(self, paths, check):
-        """Test update of gdm directory via params."""
+        """Test update of GeospaceDataManagement directory via params."""
         if check is None:
             check = paths
 
@@ -67,12 +67,12 @@ class TestBasics(object):
         os.chdir(self.tempdir.name)
 
         # Assign path
-        gdm.params['data_dirs'] = paths
-        assert gdm.params['data_dirs'] == check
+        GeospaceDataManagement.params['data_dirs'] = paths
+        assert GeospaceDataManagement.params['data_dirs'] == check
 
-        # Check if next load of gdm remembers the change
-        reload(gdm)
-        assert gdm.params['data_dirs'] == check
+        # Check if next load of GeospaceDataManagement remembers the change
+        reload(GeospaceDataManagement)
+        assert GeospaceDataManagement.params['data_dirs'] == check
         return
 
     @pytest.mark.parametrize("path", ['no_path', 'not_a_directory'])
@@ -86,14 +86,14 @@ class TestBasics(object):
 
         """
         with pytest.raises(ValueError) as verr:
-            gdm.params['data_dirs'] = path
+            GeospaceDataManagement.params['data_dirs'] = path
 
         assert str(verr).find("Invalid path") >= 0
         return
 
     def test_repr(self):
         """Test __repr__ method."""
-        out = gdm.params.__repr__()
+        out = GeospaceDataManagement.params.__repr__()
         assert out.find('Parameters(path=') >= 0
         return
 
@@ -101,14 +101,14 @@ class TestBasics(object):
         """Ensure str method works."""
 
         # Include a user parameter
-        gdm.params['gdm_user_test_str'] = 'We are here.'
+        GeospaceDataManagement.params['gdm_user_test_str'] = 'We are here.'
 
-        out = str(gdm.params)
+        out = str(GeospaceDataManagement.params)
         # Confirm start of str
-        assert out.find('GeospaceDataParameters Parameters object') >= 0
+        assert out.find('GeospaceDataManagement Parameters object') >= 0
 
         # Confirm that default, non-default, and user values present
-        assert out.find('GeospaceDataParameters settings') > 0
+        assert out.find('GeospaceDataManagement Parameters settings') > 0
         assert out.find('Standard parameters:') > 0
 
         assert out.find('settings (non-default)') > 0
@@ -122,37 +122,40 @@ class TestBasics(object):
         """Test restore_defaults works as intended."""
 
         # Get default value, as per setup
-        default_val = gdm.params['update_files']
+        default_val = GeospaceDataManagement.params['update_files']
 
         # Change value to non-default
-        gdm.params['update_files'] = not default_val
+        GeospaceDataManagement.params['update_files'] = not default_val
 
         # Restore defaults
-        gdm.params.restore_defaults()
+        GeospaceDataManagement.params.restore_defaults()
 
         # Ensure new value is the default
-        assert gdm.params['update_files'] == default_val
+        assert GeospaceDataManagement.params['update_files'] == default_val
 
         # Make sure that non-default values left as is
-        assert gdm.params['data_dirs'] != []
+        assert GeospaceDataManagement.params['data_dirs'] != []
         return
 
     def test_update_standard_value(self):
         """Test that update of a pre-existing standard value is stored."""
 
         # Get default value, as per setup
-        default_val = gdm.params['update_files']
+        default_val = GeospaceDataManagement.params['update_files']
 
         # Change value to non-default
-        gdm.params['update_files'] = not gdm.params['update_files']
+        GeospaceDataManagement.params[
+            'update_files'] = not GeospaceDataManagement.params['update_files']
 
         # Ensure it is in memory
-        assert gdm.params['update_files'] is not default_val
+        assert GeospaceDataManagement.params['update_files'] is not default_val
 
         # Get a new parameters instance and verify information is retained.
-        # Using eval to ensure all settings with current gdm.params retained.
-        new_params = eval(gdm.params.__repr__())
-        assert new_params['update_files'] == gdm.params['update_files']
+        # Using eval to ensure all settings with current
+        # GeospaceDataManagement.params retained.
+        new_params = eval(GeospaceDataManagement.params.__repr__())
+        assert new_params['update_files'] == GeospaceDataManagement.params[
+            'update_files']
         return
 
     def test_no_update_user_modules(self):
@@ -160,32 +163,33 @@ class TestBasics(object):
 
         # Attempt to change value
         with pytest.raises(ValueError) as err:
-            gdm.params['user_modules'] = {}
-        assert str(err).find('The gdm.utils.registry ') >= 0
+            GeospaceDataManagement.params['user_modules'] = {}
+        assert str(err).find('The GeospaceDataManagement.utils.registry ') >= 0
         return
 
     def test_add_user_parameter(self):
         """Add custom parameter and ensure present."""
 
-        gdm.params['hi_there'] = 'hello there!'
-        assert gdm.params['hi_there'] == 'hello there!'
+        GeospaceDataManagement.params['hi_there'] = 'hello there!'
+        assert GeospaceDataManagement.params['hi_there'] == 'hello there!'
 
         # Get a new parameters instance and verify information is retained
-        # Using eval to ensure all settings with current gdm.params retained.
-        new_params = eval(gdm.params.__repr__())
-        assert new_params['hi_there'] == gdm.params['hi_there']
+        # Using eval to ensure all settings with current GeospaceDataManagement.params retained.
+        new_params = eval(GeospaceDataManagement.params.__repr__())
+        assert new_params['hi_there'] == GeospaceDataManagement.params[
+            'hi_there']
         return
 
     def test_clear_and_restart(self):
         """Verify clear_and_restart method impacts all values."""
 
-        gdm.params.clear_and_restart()
+        GeospaceDataManagement.params.clear_and_restart()
 
         # Check default value
-        assert gdm.params['user_modules'] == {}
+        assert GeospaceDataManagement.params['user_modules'] == {}
 
         # Check value without working default
-        assert gdm.params['data_dirs'] == []
+        assert GeospaceDataManagement.params['data_dirs'] == []
 
         return
 
@@ -210,7 +214,7 @@ class TestCIonly(CICleanSetup):
     def test_settings_file_must_be_present(self, capsys):
         """Ensure gdm_settings.json is present."""
 
-        reload(gdm)
+        reload(GeospaceDataManagement)
 
         captured = capsys.readouterr()
         # Ensure GeospaceDataParameters is running in 'first-time' mode
@@ -232,7 +236,7 @@ class TestCIonly(CICleanSetup):
     def test_settings_file_cwd(self, capsys):
         """Test Parameters works when settings file in current working dir."""
 
-        reload(gdm)
+        reload(GeospaceDataManagement)
 
         captured = capsys.readouterr()
         # Ensure GeospaceDataManagement is running in 'first-time' mode

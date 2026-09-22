@@ -197,13 +197,13 @@ def calc_solar_local_time(inst, lon_name=None, slt_name='slt',
     else:
         inst.data = inst.data.assign({slt_name: (coords, slt.data)})
 
-    # Add units to the metadata
-    inst.meta[slt_name] = {inst.meta.labels.units: 'h',
-                           inst.meta.labels.name: "Solar Local Time",
-                           inst.meta.labels.desc: "Solar local time in hours",
-                           inst.meta.labels.min_val: min_val,
-                           inst.meta.labels.max_val: max_val,
-                           inst.meta.labels.fill_val: fill_val}
+    # Add units to the metadata TODO
+    # inst.meta[slt_name] = {inst.meta.labels.units: 'h',
+    #                        inst.meta.labels.name: "Solar Local Time",
+    #                        inst.meta.labels.desc: "Solar local time in hours",
+    #                        inst.meta.labels.min_val: min_val,
+    #                        inst.meta.labels.max_val: max_val,
+    #                        inst.meta.labels.fill_val: fill_val}
 
     return
 

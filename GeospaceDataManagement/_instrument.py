@@ -167,10 +167,11 @@ class Instrument(object):
 
     Notes
     -----
-    pysat attempts to load the module platform_name.py located in the
-    pysat/instruments directory. This module provides the underlying
-    functionality to download, load, and clean instrument data. Alternatively,
-    the module may be supplied directly using keyword inst_module.
+    GeospaceDataManagement attempts to load the module platform_name.py located
+    in the GeospaceDataManagement/instruments directory. This module provides
+    the underlying functionality to download, load, and clean instrument data.
+    Alternatively, the module may be supplied directly using keyword
+    `inst_module`.
 
     Examples
     --------
@@ -603,13 +604,12 @@ class Instrument(object):
             istr = getattr(self.inst_module, "__name__")
 
         # Create string for other parts Instrument instantiation
-        out_str = "".join(["gdm.Instrument(platform='", self.platform,
-                           "', name='", self.name, "', tag='", self.tag,
-                           "', inst_id='", self.inst_id,
-                           "', clean_level='", self.clean_level,
-                           "', pad={:}, inst_module=".format(self.pad), istr,
-                           ", custom=", cstr, ", **{:}".format(repr(in_kwargs)),
-                           ")"])
+        out_str = "".join([
+            "GeospaceDataManagement.Instrument(platform='", self.platform,
+            "', name='", self.name, "', tag='", self.tag, "', inst_id='",
+            self.inst_id, "', clean_level='", self.clean_level,
+            "', pad={:}, inst_module=".format(self.pad), istr,
+            ", custom=", cstr, ", **{:}".format(repr(in_kwargs)), ")"])
 
         return out_str
 
@@ -617,7 +617,7 @@ class Instrument(object):
         """Descriptively print the basic Instrument properties."""
 
         # Get the basic Instrument properties
-        output_str = 'pysat Instrument object\n'
+        output_str = 'GeospaceDataManagement Instrument object\n'
         output_str += '-----------------------\n'
         output_str += "Platform: '{:s}'\n".format(self.platform)
         output_str += "Name: '{:s}'\n".format(self.name)
@@ -1345,7 +1345,7 @@ class Instrument(object):
                 # Look within gdm
                 self.inst_module = importlib.import_module(
                     ''.join(('.', self.platform, '_', self.name)),
-                    package='gdm.instruments')
+                    package='GeospaceDataManagement.instruments')
             else:
                 # Not a native gdm.Instrument. First, get the supporting
                 # instrument module from the gdm registry.
@@ -2766,7 +2766,7 @@ class Instrument(object):
         ::
 
             import datetime as dt
-            import pysat
+            import GeospaceDataManagement as gdm
 
             inst = gdm.Instrument('gdm', 'testing')
 

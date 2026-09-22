@@ -25,7 +25,7 @@ import tempfile
 
 import pytest
 
-import GeospaceDataManagement as gdm
+import GeospaceDataManagement
 
 
 class InstIntegrationTests(object):
@@ -57,8 +57,8 @@ class InstIntegrationTests(object):
 
         # Change pysat directory to temporary directory
         tempdir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
-        saved_dir = gdm.params['data_dirs']
-        gdm.params['data_dirs'] = tempdir.name
+        saved_dir = GeospaceDataManagement.params['data_dirs']
+        GeospaceDataManagement.params['data_dirs'] = tempdir.name
 
         # Make another new instrument now that `data_dirs` changed. Normally,
         # pysat will use whatever directory was stored with the list of
@@ -68,7 +68,7 @@ class InstIntegrationTests(object):
             self.testInst = eval(inst_str)
 
         # Restore pysat directory before any further assertions
-        gdm.params['data_dirs'] = saved_dir
+        GeospaceDataManagement.params['data_dirs'] = saved_dir
 
         # Ensure debug message printed for observed change in data directories
         dstr = ' '.join(['`data_path` found',

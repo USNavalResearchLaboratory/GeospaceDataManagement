@@ -28,7 +28,7 @@ import pandas as pds
 import pytest
 import xarray as xr
 
-import GeospaceDataManagement as gdm
+import GeospaceDataManagement
 from GeospaceDataManagement.instruments.methods import testing as ps_meth
 from GeospaceDataManagement.utils import testing
 from GeospaceDataManagement.utils.time import filter_datetime_input
@@ -68,7 +68,7 @@ class InstPropertyTests(object):
         """Check for error when instantiating with bad load keywords on init."""
 
         # Test that the correct error is raised
-        testing.eval_bad_input(gdm.Instrument, ValueError,
+        testing.eval_bad_input(GeospaceDataManagement.Instrument, ValueError,
                                "unknown keyword supplied",
                                input_kwargs={'platform': self.testInst.platform,
                                              'name': self.testInst.name,
@@ -96,8 +96,8 @@ class InstPropertyTests(object):
         # Check that the correct error is raised
         estr = ''.join(('Reserved keyword "', kwarg, '" is not ',
                         'allowed at instantiation.'))
-        testing.eval_bad_input(gdm.Instrument, ValueError, estr,
-                               input_kwargs=in_kwargs)
+        testing.eval_bad_input(GeospaceDataManagement.Instrument, ValueError,
+                               estr, input_kwargs=in_kwargs)
 
         return
 
@@ -116,12 +116,13 @@ class InstPropertyTests(object):
 
         """
 
-        inst_module = getattr(gdm.instruments,
+        inst_module = getattr(GeospaceDataManagement.instruments,
                               '_'.join((self.testInst.platform,
                                         self.testInst.name)))
         # Update settings for this test
         setattr(inst_module, attr, {'': {'': setting}})
-        self.testInst = gdm.Instrument(inst_module=inst_module)
+        self.testInst = GeospaceDataManagement.Instrument(
+            inst_module=inst_module)
 
         assert getattr(self.testInst, attr) is setting
         return
@@ -207,7 +208,8 @@ class InstPropertyTests(object):
         if no_remote_files:
             inst_module = self.testInst.inst_module
             del inst_module.list_remote_files
-            self.testInst = gdm.Instrument(inst_module=inst_module)
+            self.testInst = GeospaceDataManagement.Instrument(
+                inst_module=inst_module)
 
         # Run the method and get the log output
         with caplog.at_level(logging.INFO, logger='GeospaceDataManagement'):
@@ -357,14 +359,17 @@ class InstPropertyTests(object):
         """Test `.copy()` with inst_module != None."""
 
         # Assign module to inst_module
-        self.testInst.inst_module = gdm.instruments.gdm_testing
+        self.testInst.inst_module = \
+            GeospaceDataManagement.instruments.gdm_testing
 
         inst_copy = self.testInst.copy()
 
         # Confirm equality and that module is still present
         assert inst_copy == self.testInst
-        assert inst_copy.inst_module == gdm.instruments.gdm_testing
-        assert self.testInst.inst_module == gdm.instruments.gdm_testing
+        assert (inst_copy.inst_module
+                == GeospaceDataManagement.instruments.gdm_testing)
+        assert (self.testInst.inst_module
+                == GeospaceDataManagement.instruments.gdm_testing)
 
         return
 
@@ -375,13 +380,6 @@ class InstPropertyTests(object):
             self.testInst.bad_attr
 
         assert str(aerr).find("object has no attribute") >= 0
-        return
-
-    def test_base_attr(self):
-        """Test retrieval of base attribute."""
-
-        self.testInst._base_attr
-        assert '_base_attr' in dir(self.testInst)
         return
 
     def test_inst_attributes_not_overwritten(self):
@@ -398,7 +396,7 @@ class InstPropertyTests(object):
 
         self.out = self.testInst.__repr__()
         assert isinstance(self.out, str)
-        assert self.out.find("gdm.Instrument(") == 0
+        assert self.out.find("GeospaceDataManagement.Instrument(") == 0
         return
 
     def test_basic_str(self):
@@ -484,11 +482,12 @@ class InstPropertyTests(object):
 
         """
 
-        import gdm.instruments.gdm_testing as test
+        import GeospaceDataManagement.instruments.gdm_testing as test
         delattr(test, del_routine)
 
         estr = 'A `{:}` function is required'.format(del_routine)
-        testing.eval_bad_input(gdm.Instrument, AttributeError, estr,
+        testing.eval_bad_input(GeospaceDataManagement.Instrument,
+                               AttributeError, estr,
                                input_kwargs={'inst_module': test, 'tag': '',
                                              'clean_level': 'clean'})
         return
@@ -654,14 +653,14 @@ class InstPropertyTests(object):
     def test_optional_unknown_data_dir(self, caplog):
         """Test log warning raised when supplying an optional bad data path."""
 
-        inst_module = getattr(gdm.instruments,
+        inst_module = getattr(GeospaceDataManagement.instruments,
                               '_'.join((self.testInst.platform,
                                         self.testInst.name)))
 
         # Update settings for this test
         with caplog.at_level(logging.WARNING, logger='GeospaceDataManagement'):
-            self.testInst = gdm.Instrument(inst_module=inst_module,
-                                           data_dir="not_a_directory")
+            self.testInst = GeospaceDataManagement.Instrument(
+                inst_module=inst_module, data_dir="not_a_directory")
 
         captured = caplog.text
         assert captured.find("data directory doesn't exist") >= 0
@@ -689,8 +688,8 @@ class InstPropertyTests(object):
         kwargs['platform'] = self.testInst.platform
         kwargs['name'] = self.testInst.name
 
-        testing.eval_bad_input(gdm.Instrument, ValueError, estr,
-                               input_kwargs=kwargs)
+        testing.eval_bad_input(GeospaceDataManagement.Instrument, ValueError,
+                               estr, input_kwargs=kwargs)
         return
 
     def test_get_var_type_code_unknown_type(self):
@@ -714,8 +713,8 @@ class InstPropertyTests(object):
         """
 
         with warnings.catch_warnings(record=True) as war:
-            tinst = gdm.Instrument(inst_module=self.testInst.inst_module,
-                                   **kwargs)
+            tinst = GeospaceDataManagement.Instrument(
+                inst_module=self.testInst.inst_module, **kwargs)
 
         default_str = ' '.join(["inst_module supplied along with",
                                 "platform/name. Defaulting to"])

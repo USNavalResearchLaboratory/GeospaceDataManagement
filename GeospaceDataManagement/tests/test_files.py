@@ -177,7 +177,7 @@ class TestBasics(object):
         """Test the standard `__repr__` output."""
         self.out = self.testInst.files.__repr__()
         assert isinstance(self.out, str)
-        assert self.out.find("gdm.Files(") >= 0
+        assert self.out.find("GeospaceDataManagement.Files(") >= 0
         return
 
     def test_eval_repr(self):
@@ -359,7 +359,7 @@ class TestBasics(object):
          ['gdm_1234567_junk_{year:04d}_gold_{day:03d}_stuff',
           'gdm_123{code:4s}_junk_{year:04d}_gold_{day:03d}_stuff'],
          ['gdm_1234567_junk_{year:04d}_gold_{day:03d}_stuff',
-          '{code:5s}_{code2:7s}_junk_{year:04d}_gold_{day:03d}_stuff']])
+          '{code:3s}_{code2:7s}_junk_{year:04d}_gold_{day:03d}_stuff']])
     @pytest.mark.parametrize("delimiter", [None, '_'])
     def test_from_os_user_vars(self, delimiter, root_fname, root_pname):
         """Check that Files.from_os works with user vars.
@@ -395,7 +395,7 @@ class TestBasics(object):
         assert files.index.is_monotonic_increasing
 
         # Check overall length
-        assert len(files) == len(dates)
+        assert len(files) == len(dates), len(tfiles)
 
         # Check specific date
         assert np.all(files.index == dates)
@@ -414,15 +414,15 @@ class TestBasics(object):
                                         '_file'])],
                               [''.join(['gdm_1234567_junk_{year:04d}_gold_',
                                         '{day:03d}_stuff.gdm_testing_file']),
-                               ''.join(['{code:5s}_{code2:7s}_*_{year:04d}',
+                               ''.join(['{code:3s}_{code2:7s}_*_{year:04d}',
                                         '_*_{day:03d}_*.*_*_*'])],
                               [''.join(['gdm_1234567_junk_{year:04d}_gold_',
                                         '{day:03d}_stuff.gdm_testing_file']),
-                               ''.join(['{code:5s}_{code2:7s}_*_{year:04d}',
+                               ''.join(['{code:3s}_{code2:7s}_*_{year:04d}',
                                         '_*_{day:03d}_*.*'])],
                               [''.join(['gdm_1234567_junk_{year:04d}_gold_',
                                         '{day:03d}stuff.gdm_testing_file']),
-                               ''.join(['{code:5s}_{code2:7s}_*_{year:04d}',
+                               ''.join(['{code:3s}_{code2:7s}_*_{year:04d}',
                                         '_*_{day:03d}*.*'])],
                               [''.join(['gdm_1234567_junk_{year:04d}_gold_',
                                         '{day:03d}stuff.gdm_testing_file']),
@@ -476,9 +476,9 @@ class TestBasics(object):
                                ['code', 'd'], [1234567, 'gold']],
                               [''.join(['gdm_1234567_junk_{year:04d}_gold_',
                                         '{day:03d}_55555.gdm-testing-file']),
-                               ''.join(['{lead_code:5}_{code:7d}_{year2:4}',
+                               ''.join(['{lead_code:3}_{code:7d}_{year2:4}',
                                         '_{year:04d}_{d:4}_{day:03d}_',
-                                        '{code2:5d}.{final_code:18}']),
+                                        '{code2:5d}.{final_code:16}']),
                                ['lead_code', 'code', 'year2', 'd', 'code2',
                                 'final_code'],
                                ['gdm', 1234567, 'junk', 'gold', 55555,
@@ -542,9 +542,9 @@ class TestBasics(object):
                                         'file'])],
                               [''.join(['gdm_1234567_junk_{year:04d}_gold_',
                                         '{day:03d}_55555.gdm-testing-file']),
-                               ''.join(['{lead_code:5}_{code:7d}_{year2:4}_',
+                               ''.join(['{lead_code:3}_{code:7d}_{year2:4}_',
                                         '{year:04d}_{d:4}_{day:03d}_{code2:5d}',
-                                       '.{final_code:18}'])]])
+                                       '.{final_code:16}'])]])
     def test_wilcard_searching(self, root_fname, root_pname):
         """Check that searching with wildcard=True works.
 
@@ -602,7 +602,7 @@ class TestBasics(object):
 
     def test_instrument_has_files(self):
         """Test that instrument generates file list if there are files."""
-        import gdm.instruments.gdm_testing
+        from GeospaceDataManagement.instruments import gdm_testing
 
         root_fname = ''.join(('gdm_testing_junk_{year:04d}_gold_{day:03d}_'
                               'stuff_{month:02d}_{hour:02d}_{minute:02d}_'
@@ -617,10 +617,10 @@ class TestBasics(object):
         # Create a DatetimeIndex with the same range of dates as the new files
         dates = gdm.utils.time.create_date_range(start, stop, freq='100min')
 
-        gdm.instruments.gdm_testing.list_files = functools.partial(
-            list_files, version=self.version)
+        gdm_testing.list_files = functools.partial(list_files,
+                                                   version=self.version)
         inst = gdm.Instrument(platform='gdm', name='testing', update_files=True)
-        reload(gdm.instruments.gdm_testing)
+        reload(gdm_testing)
 
         assert (np.all(inst.files.files.index == dates))
         return
