@@ -272,3 +272,37 @@ def load_csv_data(fnames, read_csv_kwargs=None):
             data.index.name = "Epoch"
 
     return data
+
+
+def get_meta_dict(**kwargs):
+    """Get a dictionary to assign meta data with default and/or custom values.
+
+    Parameters
+    ----------
+    **kwargs : dict
+        Dict with keys as meta data labels (e.g., 'units') and values as the
+        meta data values (e.g., 'hours')
+
+    Returns
+    -------
+    meta_dict : dict
+        Dictionary with keys of 'units', 'name', 'min_val', 'max_val', 'desc',
+        'notes', and 'fill_val', along with any additional keys from the input
+         parameters. Standard values will be assigned, unless these keys are
+         supplied upon input.
+
+    """
+    # Set the defaults
+    default_dict = {'units': '', 'name': '', 'min_val': -np.inf,
+                    'max_val': np.inf, 'fill_val': np.nan, 'desc': '',
+                    'notes': ''}
+
+    # Initialize the output
+    meta_dict = dict(kwargs)
+
+    # Assign any defaults
+    for dkey in default_dict.keys():
+        if dkey.lower() not in meta_dict.keys():
+            meta_dict[dkey] = default_dict[dkey.lower()]
+
+    return meta_dict

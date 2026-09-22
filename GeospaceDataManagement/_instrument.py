@@ -144,6 +144,8 @@ class Instrument(object):
     load_step : dt.timedelta
         The temporal increment for loading data, defaults to a timestep of one
         day
+    meta_labels : list
+        Metadata attribute keys present in the data
     today : dt.datetime
         Date and time for the current day in UT
     tomorrow : dt.datetime
@@ -1109,7 +1111,7 @@ class Instrument(object):
 
         Parameters
         ----------
-        data : NoneType, pds.DataFrame, or xr.Dataset
+        data : NoneType or xr.Dataset
             Data object. If None, use `self.data`.
 
         Returns
@@ -1131,6 +1133,39 @@ class Instrument(object):
             index = data.indexes[epoch_names[-1]]
 
         return index
+
+    def _meta_labels(self, data=None):
+        """List of meta data labels assigned to the data variables.
+
+        Parameters
+        ----------
+        data : NoneType or xr.Dataset
+            Data object. If None, will use `self.data`.
+
+        Returns
+        -------
+        label_list : list
+            List of meta labels assigned to data variables, which are not
+            required to be assigned to all data variables.
+
+        """
+        # Initialize the output
+        label_list = list()
+        
+        # Support easy application to `self.data`
+        if data is None:
+            if hasattr(self, 'data'):
+                data = self.data
+            else:
+                return label_list
+
+        # Cycle through all data variable keys
+        for dvar in list(data.variables.keys()):
+            for akey in list(data[dvar].attrs.keys()):
+                if akey not in label_list:
+                    label_list.append(akey)
+
+        return label_list
 
     def _pass_method(*args, **kwargs):
         """Empty default method for updatable Instrument methods."""
@@ -1358,6 +1393,7 @@ class Instrument(object):
         ------
         ValueError
             If both `date` and `fid` are None, or if `inc` left unspecified
+
         """
         # Set default `load_kwargs`
         if load_kwargs is None:
@@ -1968,6 +2004,17 @@ class Instrument(object):
     def index(self):
         """Time index of the loaded data."""
         return self._index()
+
+    @property
+    def meta_labels(self):
+        """List of meta data labels assigned to the data variables.
+
+        Notes
+        -----
+        Not all meta labels are required to be assigned to all data variables.
+
+        """
+        return self._meta_labels()
 
     @property
     def variables(self):

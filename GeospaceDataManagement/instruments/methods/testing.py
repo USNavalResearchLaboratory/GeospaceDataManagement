@@ -186,6 +186,98 @@ def preprocess(self, test_preprocess_kwarg=None):
 
 
 # Utility functions
+def initialize_test_meta(epoch_name, data):
+    """Initialize meta data for test instruments.
+
+    This routine should be applied to test instruments at the end of the load
+    routine.
+
+    Parameters
+    ----------
+    epoch_name : str
+        The variable name of the instrument epoch.
+    data : xr.Dataset
+        The dataset keys from the instrument.
+
+    """
+    # Create standard metadata for all parameters
+    meta_dict = {
+        'uts': {'units': 's', 'long_name': 'Universal Time',
+                'desc': 'Number of seconds since mindight UT',
+                'min_val': 0.0, 'max_val': 86400.0},
+        'mlt': {'units': 'hours', 'long_name': 'Magnetic Local Time',
+                'min_val': 0.0, 'max_val': 24.0,
+                'desc': 'Local time at magnetic field line at equator.'},
+        'slt': {'units': 'hours', 'long_name': 'Solar Local Time',
+                'min_val': 0.0, 'max_val': 24.0,
+                'desc': 'Mean solar time.', 'notes': 'Example of notes.'},
+        'longitude': {'units': 'degrees', 'long_name': 'Longitude',
+                      'min_val': 0.0, 'max_val': 360.0,
+                      'desc': 'Geographic Longitude'},
+        'latitude': {'units': 'degrees', 'long_name': 'Latitude',
+                     'min_val': -90.0, 'max_val': 90.0,
+                     'desc': 'Geographic Latituce'},
+        'altitude': {'units': 'km', 'long_name': 'Altitude',
+                     'min_val': 0.0, 'max_val': np.inf,
+                     'desc': 'Height above mean Earth.'},
+        'orbit_num': {'units': '', 'long_name': 'Orbit Number',
+                      'desc': 'Orbit Number', 'min_val': 0,
+                      'max_val': 25000, 'fill_val': -1,
+                      'notes': ''.join(['Number of orbits since the start ',
+                                        'of the mission. For this ',
+                                        'simulation we use the number of ',
+                                        '5820 second periods since the ',
+                                        'start, 2008-01-01.'])},
+        'dummy1': {'min_val': 0, 'max_val': 24, 'fill_val': -1},
+        'dummy2': {'min_val': 0, 'max_val': 24, 'fill_val': -1},
+        'dummy3': {'min_val': 0., 'max_val': 24024.},
+        'dummy4': {'desc': 'Dummy variable - UTS like', 'min_val': 0.,
+                   'max_val': 86400., 'fill_val': np.nan},
+        'unicode_dummy': {'desc': 'Dummy unicode variable.', 'units': ''},
+        'string_dummy': {'desc': 'Dummy string variable.', 'units': ''},
+        'dummy_drifts': {'desc': 'Dummy drift values.', 'min_val': -1000.,
+                         'max_val': 1000., 'fill_val': np.nan},
+        'profiles': {'long_name': 'profiles', 'min_val': 0,
+                     'max_val': 4294967295, 'fill_val': -1,
+                     'desc': ''.join(['Testing profile multi-dimensional ',
+                                      'data indexed by time.']),
+                     'notes': ''.join([
+                         'Note the max_val is largest netCDF4 supports, ',
+                         'but is lower than actual 64-bit int limit.'])},
+        'profile_height': {'min_val': 0, 'max_val': 14, 'fill_val': -1,
+                           'desc': 'Altitude of profile data.'},
+        'variable_profile_height': {'long_name': 'Variable Profile Height',
+                                    'desc': 'Profiles with variable altitude.'},
+        'time_height': {'desc': 'Additional time variable.'},
+        'images': {'desc': 'pixel value of image',
+                   'notes': 'function of image_lat and image_lon'},
+        'x': {'desc': 'x-value of image pixel', 'notes': 'Dummy Variable',
+              'min_val': 0, 'max_val': 7, 'fill_val': -1},
+        'y': {'desc': 'y-value of image pixel', 'notes': 'Dummy Variable',
+              'min_val': 0, 'max_val': 7, 'fill_val': -1},
+        'z': {'desc': 'z-value of profile height', 'notes': 'Dummy Variable',
+              'min_val': 0, 'max_val': 5, 'fill_val': -1},
+        'image_lat': {'desc': 'Latitude of image pixel',
+                      'notes': 'Dummy Variable', 'min_val': -90.,
+                      'max_val': 90.},
+        'image_lon': {'desc': 'Longitude of image pixel',
+                      'notes': 'Dummy Variable', 'min_val': 0.,
+                      'max_val': 360.}}
+
+    # Add metadata for integer dummy variables
+    var_vals = {'min_val': 0, 'max_val': 2, 'fill_val': -1}
+    var_list = ['int8_dummy', 'int16_dummy', 'int32_dummy', 'int64_dummy']
+    for var in var_list:
+        meta_dict[var] = var_vals
+
+    # Assign meta data for desired instrument, using only available variables
+    for var in data.data_vars.keys():
+        if var in meta_dict.keys():
+            data[var] = data[var].assign_attrs(meta_dict[var])
+
+    return
+
+
 def list_files(tag='', inst_id='', data_path='', format_str=None,
                file_date_range=None, test_dates=None, mangle_file_dates=False,
                test_list_files_kwarg=None):

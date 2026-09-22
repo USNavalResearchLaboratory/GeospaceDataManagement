@@ -187,6 +187,11 @@ def load(fnames, tag='', inst_id='', sim_multi_file_right=False,
     data.index = index
     data.index.name = 'time'
 
+    # Initialize the meta data, if desired
+    if tag != 'default_meta':
+        data = data.to_xarray()
+        mm_test.initialize_test_meta('time', data)
+
     return data
 
 

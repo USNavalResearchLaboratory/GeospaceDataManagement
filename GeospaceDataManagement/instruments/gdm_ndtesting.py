@@ -255,6 +255,8 @@ def load(fnames, tag='', inst_id='', sim_multi_file_right=False,
                                              data.coords['z'].shape[0]),
                                       fill_value=100.0 + i))
 
+    # Set the meta data and return
+    mm_test.initialize_test_meta(epoch_name, data)
     return data
 
 

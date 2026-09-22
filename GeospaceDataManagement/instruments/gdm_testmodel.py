@@ -117,7 +117,7 @@ def load(fnames, tag='', inst_id='', start_time=None, num_samples=96,
         for i in np.arange(len(data['ilev'])):
             for j in np.arange(len(data['uts'])):
                 dummy0[j, i, :, :] = i * 10. + j + inc_arr
-        dummy0.data *= 100000.
+        dummy0.data *= 100000.0
         data['altitude'] = ((epoch_name, 'ilev', 'latitude', 'longitude'),
                             dummy0.data)
 
@@ -169,57 +169,40 @@ def load(fnames, tag='', inst_id='', start_time=None, num_samples=96,
                           dummy2.data)
 
     # Set the meta data
-    # meta = mm_test.initialize_test_meta(epoch_name, data.keys())
+    mm_test.initialize_test_meta(epoch_name, data)
 
-    # # Adjust metadata from overall defaults
-    # meta['dummy1'] = {'value_min': -2**32 + 2, 'value_max': 2**32 - 1,
-    #                   'fill': -2**32 + 1}
-    # if tag == '':
-    #     # Assign metadata unique to default tag
-    #     meta['dummy2'] = {'value_min': -2**32 + 2, 'value_max': 2**32 - 1,
-    #                       'fill': -2**32 + 1}
+    # Adjust metadata from overall defaults
+    data['dummy1'].attrs['min_val'] = -2**32 + 2
+    data['dummy1'].attrs['max_val'] = 2**32 - 1,
+    data['dummy1'].attrs['fill_val'] = -2**32 + 1
 
-    # if tag == 'pressure_levels':
-    #     # Assigning new metadata for altitude since it differs from default info
-    #     meta['altitude'] = {meta.labels.units: 'cm',
-    #                         meta.labels.name: 'altitude',
-    #                         meta.labels.min_val: 0.,
-    #                         meta.labels.max_val: 1E8,
-    #                         meta.labels.desc: ' '.join(('Altitude (fake) for',
-    #                                                     'each pressure level')),
-    #                         meta.labels.notes: '',
-    #                         meta.labels.fill_val: np.nan}
+    if tag == '':
+        # Assign metadata unique to default tag
+        data['dummy2'].attrs['min_val'] = -2**32 + 2
+        data['dummy2'].attrs['max_val'] = 2**32 - 1,
+        data['dummy2'].attrs['fill_val'] = -2**32 + 1
 
-    #     # Assigning metadata for meridional ion drifts since it differs from
-    #     # default info.
-    #     meta['dummy_drifts'] = {meta.labels.units: 'm/s',
-    #                             meta.labels.name: 'Meridional Ion Drift',
-    #                             meta.labels.min_val: -250.,
-    #                             meta.labels.max_val: 250.,
-    #                             meta.labels.desc: ' '.join(('Non-physical',
-    #                                                         'meridional',
-    #                                                         'ion drifts.')),
-    #                             meta.labels.notes: '',
-    #                             meta.labels.fill_val: np.nan}
+    if tag == 'pressure_levels':
+        # Assigning new metadata for altitude since it differs from default info
+        data['altitude'] = data['altitude'].assign_attrs(
+            {'units': 'cm', 'name': 'altitude', 'min_val': 0.0,
+             'max_val': 1e8, 'desc': 'Altitude (fake) for each pressure level',
+             'notes': '', 'fill_val': np.nan})
 
-    #     # Assign metadata for the new coordinate axis here, `lev` and `ilev`.
-    #     meta['lev'] = {meta.labels.units: '',
-    #                    meta.labels.name: 'Pressure Level (midpoint)',
-    #                    meta.labels.min_val: -6.875,
-    #                    meta.labels.max_val: 7.125,
-    #                    meta.labels.desc: ' '.join(('Log of atmospheric',
-    #                                                'pressure level.')),
-    #                    meta.labels.notes: 'p(lev) = p0 * exp(-lev)',
-    #                    meta.labels.fill_val: np.nan}
+        # Assigning metadata for meridional ion drifts since it differs from
+        # default info.
+        data['dummy_drifts'] = data['dummy_drifts'].assign_attrs(
+            {'units': 'm/s', 'name': 'Meridional Ion Drift',
+             'min_val': -250.0, 'max_val': 250.0,
+             'desc': 'Non-physical meridional ion drifts.',
+             'notes': '', 'fill_val': np.nan})
 
-    #     meta['ilev'] = {meta.labels.units: '',
-    #                     meta.labels.name: 'Pressure Level Interface',
-    #                     meta.labels.min_val: -6.875,
-    #                     meta.labels.max_val: 7.125,
-    #                     meta.labels.desc: ' '.join(('Log of atmospheric',
-    #                                                 'pressure level.')),
-    #                     meta.labels.notes: 'p(ilev) = p0 * exp(-ilev)',
-    #                     meta.labels.fill_val: np.nan}
+        # Assign metadata for the new coordinate axis here, `lev` and `ilev`.
+        data['lev'] = data['lev'].assign_attrs(
+            {'units': '', 'name': 'Pressure Level Interface',
+             'min_val': -6.875, 'max_val': 7.125,
+             'desc': 'Log of atmospheric pressure level.',
+             'notes': 'p(ilev) = p0 * exp(-ilev)', 'fill_val': np.nan})
 
     return data
 
