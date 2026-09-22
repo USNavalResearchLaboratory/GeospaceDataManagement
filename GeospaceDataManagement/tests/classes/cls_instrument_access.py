@@ -589,26 +589,6 @@ class InstAccessTests(object):
         assert inst_copy != self.testInst
         return
 
-    def test_eq_different_data_type(self):
-        """Test equality different data type."""
-
-        self.testInst.load(date=self.ref_time)
-        inst_copy = self.testInst.copy()
-
-        # Can only change data types if Instrument empty
-        inst_copy.data = inst_copy._null_data
-
-        if self.testInst.pandas_format:
-            inst_copy.pandas_format = False
-            inst_copy.data = xr.Dataset()
-        else:
-            inst_copy.pandas_format = True
-            inst_copy.data = pds.DataFrame()
-
-        assert inst_copy != self.testInst
-
-        return
-
     def test_eq_different_type(self):
         """Test equality False when non-Instrument object."""
 
@@ -669,13 +649,10 @@ class InstAccessTests(object):
         # Set the keyword arguments
         kwargs = {'prepend': prepend}
         if sort_dim_toggle:
-            if self.testInst.pandas_format:
-                kwargs['sort'] = True
-            else:
-                kwargs['dim'] = 'Epoch2'
-                data2 = data2.rename({self.xarray_epoch_name: 'Epoch2'})
-                self.testInst.data = self.testInst.data.rename(
-                    {self.xarray_epoch_name: 'Epoch2'})
+            kwargs['dim'] = 'Epoch2'
+            data2 = data2.rename({self.xarray_epoch_name: 'Epoch2'})
+            self.testInst.data = self.testInst.data.rename(
+                {self.xarray_epoch_name: 'Epoch2'})
         if include:
             # To prepend new data, put existing data at end and vice versa
             kwargs['include'] = 1 if prepend else 0
@@ -683,7 +660,7 @@ class InstAccessTests(object):
         # Concat together
         self.testInst.concat_data(data2, **kwargs)
 
-        if sort_dim_toggle and not self.testInst.pandas_format:
+        if sort_dim_toggle:
             # Rename to the standard epoch name
             self.testInst.data = self.testInst.data.rename(
                 {'Epoch2': self.xarray_epoch_name})
@@ -700,12 +677,6 @@ class InstAccessTests(object):
             assert np.all(self.testInst.index[:len1]
                           < self.testInst.index[len1:])
 
-        if self.testInst.pandas_format:
-            if sort_dim_toggle:
-                assert np.all(self.testInst.data.columns
-                              == np.sort(data2.columns))
-            else:
-                assert np.all(self.testInst.data.columns == data2.columns)
         return
 
     def test_empty_flag_data_empty(self):
@@ -739,11 +710,8 @@ class InstAccessTests(object):
         self.testInst.load(self.ref_time.year, self.ref_doy)
 
         # Ensure we get the index back
-        if self.testInst.pandas_format:
-            assert np.all(self.testInst.index == self.testInst.data.index)
-        else:
-            assert np.all(self.testInst.index
-                          == self.testInst.data.indexes[self.xarray_epoch_name])
+        assert np.all(self.testInst.index
+                      == self.testInst.data.indexes[self.xarray_epoch_name])
         return
 
     @pytest.mark.parametrize("labels", [('mlt'),
@@ -779,12 +747,8 @@ class InstAccessTests(object):
         """
 
         self.testInst.load(self.ref_time.year, self.ref_doy)
-        if self.testInst.pandas_format:
-            assert np.all(self.testInst[index, 'mlt']
-                          == self.testInst.data['mlt'].iloc[index])
-        else:
-            assert np.all(self.testInst[index, 'mlt']
-                          == self.testInst.data['mlt'][index])
+        assert np.all(self.testInst[index, 'mlt']
+                      == self.testInst.data['mlt'][index])
         return
 
     def test_data_access_by_row_slicing(self):
@@ -792,19 +756,6 @@ class InstAccessTests(object):
 
         self.testInst.load(self.ref_time.year, self.ref_doy)
         result = self.testInst[0:10]
-        for variable, array in result.items():
-            assert len(array) == len(self.testInst.data[variable].values[0:10])
-            assert np.all(array == self.testInst.data[variable].values[0:10])
-        return
-
-    def test_data_access_by_row_slicing_and_name_slicing(self):
-        """Check that each variable is downsampled."""
-
-        if not self.testInst.pandas_format:
-            pytest.skip("name slicing not implemented for xarray")
-
-        self.testInst.load(self.ref_time.year, self.ref_doy)
-        result = self.testInst[0:10, 'uts':'mlt']
         for variable, array in result.items():
             assert len(array) == len(self.testInst.data[variable].values[0:10])
             assert np.all(array == self.testInst.data[variable].values[0:10])
@@ -889,43 +840,6 @@ class InstAccessTests(object):
         # assert self.testInst.meta['doubleMLT'].long_name == 'double trouble'
         return
 
-    @pytest.mark.parametrize("selection, unchanged",
-                             [(slice(0, 3), slice(3, None)),
-                              ([0, 1, 2], slice(3, None)),
-                              (0, slice(1, None))])
-    def test_setting_partial_data(self, selection, unchanged):
-        """Test setting partial data by index and key."""
-
-        self.testInst.load(self.ref_time.year, self.ref_doy)
-
-        if self.testInst.pandas_format:
-            # Save the original data for comparison
-            self.out = self.testInst
-
-            # Get the numeric variable keys
-            num_vars = [var for var in self.testInst.variables if
-                        self.testInst._get_var_type_code(
-                            self.testInst[var].dtype)[0] in ['i', 'u', 'f']]
-            str_vars = [var for var in self.testInst.variables
-                        if var not in num_vars]
-
-            # Set a subset of the data
-            self.testInst[selection, num_vars] = 0
-
-            # Selection of numeric variables should be changed
-            assert np.all(self.testInst[num_vars].values[selection] == 0)
-
-            # String data should remain unchanged
-            assert np.all(self.testInst[str_vars].values[selection]
-                          == self.out[str_vars].values[selection])
-
-            # Other data should be unchanged
-            assert np.all(self.testInst[unchanged] == self.out[unchanged])
-
-        else:
-            pytest.skip("This notation does not make sense for xarray")
-        return
-
     @pytest.mark.parametrize("changed,fixed",
                              [(0, slice(1, None)),
                               ([0, 1, 2, 3], slice(4, None)),
@@ -979,10 +893,7 @@ class InstAccessTests(object):
 
         self.testInst.load(self.ref_time.year, self.ref_doy)
         inst_subset = self.testInst[index]
-        if self.testInst.pandas_format:
-            assert len(inst_subset) == len(index)
-        else:
-            assert inst_subset.sizes[self.xarray_epoch_name] == len(index)
+        assert inst_subset.sizes[self.xarray_epoch_name] == len(index)
         return
 
     @pytest.mark.parametrize("values", [

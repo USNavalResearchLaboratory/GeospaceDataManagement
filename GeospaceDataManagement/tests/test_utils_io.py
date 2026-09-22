@@ -30,29 +30,9 @@ from GeospaceDataManagement.utils import io
 from GeospaceDataManagement.utils import testing
 
 # Define `epoch_name` and `decode_times` for future changes in default values
-default_epoch_name = 'Epoch'
+default_epoch_name = 'time'
 default_decode_times = False
-
-
-def decode_times_val(pandas_format):
-    """Return appropriate default value based upon `pandas_format`.
-
-    Parameters
-    ----------
-    pandas_format : bool
-        True, if working with a pandas data format `gdm.Instrument`
-
-    Returns
-    -------
-    decode_times : bool
-
-    """
-    if pandas_format:
-        decode_times = {}
-    else:
-        decode_times = {'decode_times': default_decode_times}
-
-    return decode_times
+decode_times = {'decode_times': default_decode_times}
 
 
 class TestLoadNetCDF(object):
@@ -100,12 +80,8 @@ class TestLoadNetCDF(object):
 
         """
         # Test that the written and loaded data matches the initial data
-        if self.testInst.pandas_format:
-            keys = list(self.testInst.data.columns)
-            new_keys = list(self.loaded_inst.columns)
-        else:
-            keys = [key for key in self.testInst.data.variables]
-            new_keys = [key for key in self.loaded_inst.variables]
+        keys = [key for key in self.testInst.data.variables]
+        new_keys = [key for key in self.loaded_inst.variables]
 
         # Test the data values for each variable
         for dkey in keys:
@@ -121,37 +97,23 @@ class TestLoadNetCDF(object):
         outfile = os.path.join(self.tempdir.name, 'gdm_test_ncdf.nc')
         self.testInst.load(date=self.stime)
 
-        # Modify data names in data
-        if self.testInst.pandas_format:
-            self.testInst.data = self.testInst.data.rename(str.upper,
-                                                           axis='columns')
-        else:
-            # Don't apply to 'time'
-            xarr_vars = io.xarray_vars_no_time(self.testInst.data)
-            map_keys = {dkey: dkey.upper() for dkey in xarr_vars}
-            self.testInst.data = self.testInst.data.rename(map_keys)
+        # Modify data names in data and don't apply to 'time'
+        xarr_vars = io.xarray_vars_no_time(self.testInst.data)
+        map_keys = {dkey: dkey.upper() for dkey in xarr_vars}
+        self.testInst.data = self.testInst.data.rename(map_keys)
 
         # Meta case is preserved and has not been altered
         io.inst_to_netcdf(self.testInst, fname=outfile, preserve_meta_case=True,
                           epoch_name=default_epoch_name)
 
-        tkwargs = decode_times_val(self.testInst.pandas_format)
-
-        self.loaded_inst, meta = io.load_netcdf(
-            outfile, pandas_format=self.testInst.pandas_format,
-            epoch_name=default_epoch_name, **tkwargs)
+        self.loaded_inst = io.load_netcdf(
+            outfile, epoch_name=default_epoch_name, **decode_times)
 
         # Revert data names to meta case
-        if self.testInst.pandas_format:
-            map_keys = {mkey.upper(): mkey
-                        for mkey in self.testInst.meta.keys()}
-            self.testInst.data = self.testInst.data.rename(map_keys,
-                                                           axis='columns')
-        else:
-            new_map_keys = {map_keys[mkey]: mkey
-                            for mkey in self.testInst.meta.keys()
-                            if mkey in map_keys.keys()}
-            self.testInst.data = self.testInst.data.rename(new_map_keys)
+        new_map_keys = {map_keys[mkey]: mkey
+                        for mkey in self.testInst.meta.keys()
+                        if mkey in map_keys.keys()}
+        self.testInst.data = self.testInst.data.rename(new_map_keys)
 
         # Test the loaded data
         self.eval_loaded_data(test_case=False)
@@ -166,22 +128,15 @@ class TestLoadNetCDF(object):
 
         # Modify data and metadata names in data
         self.testInst.meta.rename(str.upper)
-        if self.testInst.pandas_format:
-            self.testInst.data = self.testInst.data.rename(str.upper,
-                                                           axis='columns')
-        else:
-            xarr_vars = io.xarray_vars_no_time(self.testInst.data)
-            self.testInst.data = self.testInst.data.rename(
-                {dkey: dkey.upper() for dkey in xarr_vars})
+        xarr_vars = io.xarray_vars_no_time(self.testInst.data)
+        self.testInst.data = self.testInst.data.rename(
+            {dkey: dkey.upper() for dkey in xarr_vars})
 
         io.inst_to_netcdf(self.testInst, fname=outfile, preserve_meta_case=True,
                           epoch_name=default_epoch_name)
 
-        tkwargs = decode_times_val(self.testInst.pandas_format)
-
-        self.loaded_inst, meta = io.load_netcdf(
-            outfile, pandas_format=self.testInst.pandas_format,
-            epoch_name=default_epoch_name, **tkwargs)
+        self.loaded_inst = io.load_netcdf(
+            outfile, epoch_name=default_epoch_name, **decode_times)
         self.eval_loaded_data()
 
         return
@@ -209,11 +164,8 @@ class TestLoadNetCDF(object):
         io.inst_to_netcdf(self.testInst, fname=outfile, preserve_meta_case=True,
                           epoch_name=default_epoch_name, **kwargs)
 
-        tkwargs = decode_times_val(self.testInst.pandas_format)
-
-        self.loaded_inst, meta = io.load_netcdf(
-            outfile, pandas_format=self.testInst.pandas_format,
-            epoch_name=default_epoch_name, **tkwargs)
+        self.loaded_inst = io.load_netcdf(
+            outfile, epoch_name=default_epoch_name, **decode_times)
 
         for key in ['platform', 'name', 'tag', 'inst_id', 'acknowledgements',
                     'references']:
@@ -243,12 +195,10 @@ class TestLoadNetCDF(object):
         self.testInst.to_netcdf4(fname=outfile, epoch_name=default_epoch_name)
 
         # Load the written file directly into an Instrument
-        tkwargs = decode_times_val(self.testInst.pandas_format)
-
         netcdf_inst = gdm.Instrument(
             'gdm', 'netcdf', data_dir=file_path, update_files=True,
-            file_format=file_root, pandas_format=self.testInst.pandas_format,
-            epoch_name=default_epoch_name, **tkwargs)
+            file_format=file_root, epoch_name=default_epoch_name,
+            **decode_times)
 
         # Confirm data path is correct
         assert os.path.normpath(netcdf_inst.files.data_path) \
@@ -349,19 +299,13 @@ class TestLoadNetCDF(object):
         io.inst_to_netcdf(self.testInst, fname=outfile, epoch_name=write_epoch)
 
         # Pandas doesn't have 'time' error
-        if self.testInst.pandas_format:
-            err_msg = '"whoosthat" was not found in'
-            err_type = KeyError
-            decode_times = None
-        else:
-            decode_times = default_decode_times
+        decode_times = default_decode_times
 
         # Evaluate the expected error and message
         testing.eval_bad_input(
             io.load_netcdf, err_type, err_msg,
             input_args=[outfile],
             input_kwargs={'epoch_name': 'whoosthat',
-                          'pandas_format': self.testInst.pandas_format,
                           'decode_times': decode_times})
         return
 
@@ -382,30 +326,25 @@ class TestLoadNetCDF(object):
             If True, raises warning. If False, does not raise warning.
 
         """
+        # Load data
+        outfile = os.path.join(self.tempdir.name, 'gdm_test_ncdf.nc')
+        self.testInst.load(date=self.stime)
 
-        if not self.testInst.pandas_format:
-            # Load data
-            outfile = os.path.join(self.tempdir.name,
-                                   'gdm_test_ncdf.nc')
-            self.testInst.load(date=self.stime)
+        # Write file
+        io.inst_to_netcdf(self.testInst, outfile, epoch_name=write_epoch)
 
-            # Write file
-            io.inst_to_netcdf(self.testInst, outfile, epoch_name=write_epoch)
+        # Evaluate the expected warning
+        with caplog.at_level(logging.WARNING,
+                             logger='GeospaceDataManagement'):
+            io.load_netcdf(outfile, epoch_name='slt',
+                           strict_dim_check=strict_dim_check,
+                           **decode_times)
 
-            # Evaluate the expected warning
-            with caplog.at_level(logging.WARNING,
-                                 logger='GeospaceDataManagement'):
-                tkwargs = decode_times_val(self.testInst.pandas_format)
-
-                io.load_netcdf(outfile, epoch_name='slt',
-                               pandas_format=self.testInst.pandas_format,
-                               strict_dim_check=strict_dim_check, **tkwargs)
-
-            self.out = caplog.text
-            if strict_dim_check:
-                assert self.out.find(war_msg) >= 0
-            else:
-                assert self.out.find(war_msg) < 0
+        self.out = caplog.text
+        if strict_dim_check:
+            assert self.out.find(war_msg) >= 0
+        else:
+            assert self.out.find(war_msg) < 0
         return
 
     @pytest.mark.parametrize("wkwargs, lkwargs", [
@@ -432,13 +371,11 @@ class TestLoadNetCDF(object):
         io.inst_to_netcdf(self.testInst, fname=outfile, **wkwargs)
 
         # Load the data that was created
-        lkwargs['pandas_format'] = self.testInst.pandas_format
         if 'epoch_name' not in lkwargs.keys():
             lkwargs['epoch_name'] = default_epoch_name
 
-        tkwargs = decode_times_val(self.testInst.pandas_format)
-
-        self.loaded_inst, meta = io.load_netcdf(outfile, **lkwargs, **tkwargs)
+        self.loaded_inst, meta = io.load_netcdf(outfile, **lkwargs,
+                                                **decode_times)
 
         # Test the loaded data
         self.eval_loaded_data()
@@ -473,22 +410,15 @@ class TestLoadNetCDF(object):
                           epoch_name=default_epoch_name)
 
         # Load the data that was created
-        kwargs['pandas_format'] = self.testInst.pandas_format
         kwargs['epoch_name'] = default_epoch_name
 
-        tkwargs = decode_times_val(self.testInst.pandas_format)
-
-        self.loaded_inst, meta = io.load_netcdf(outfile, **tkwargs, **kwargs)
+        self.loaded_inst = io.load_netcdf(outfile, **decode_times, **kwargs)
 
         # Check that the step size is expected
-        if self.testInst.pandas_format:
-            default_delta = np.diff(self.testInst.index[:2])
-            loaded_delta = np.diff(self.loaded_inst.index[:2])
-        else:
-            default_delta = np.diff(self.testInst[self.epoch_name][:2])
+        default_delta = np.diff(self.testInst[self.epoch_name][:2])
 
-            # Average over 4 deltas to prevent rounding errors
-            loaded_delta = np.diff(self.loaded_inst[self.epoch_name][:5]).mean()
+        # Average over 4 deltas to prevent rounding errors
+        loaded_delta = np.diff(self.loaded_inst[self.epoch_name][:5]).mean()
 
         # Ratio of step_sizes should equal ratio of interpreted units
         assert ((default_delta / loaded_delta)
@@ -502,15 +432,11 @@ class TestLoadNetCDF(object):
             file_origin = unix_origin
 
         # Find distance from origin
-        if self.testInst.pandas_format:
-            default_start = (self.testInst.index[0] - unix_origin)
-            loaded_start = (self.loaded_inst.index[0] - file_origin)
-        else:
-            def_uts = pds.to_datetime(self.testInst[self.epoch_name][0].values)
-            load_uts = pds.to_datetime(
-                self.loaded_inst[self.epoch_name][0].values)
-            default_start = (def_uts - unix_origin)
-            loaded_start = (load_uts - file_origin)
+        def_uts = pds.to_datetime(self.testInst[self.epoch_name][0].values)
+        load_uts = pds.to_datetime(
+            self.loaded_inst[self.epoch_name][0].values)
+        default_start = (def_uts - unix_origin)
+        loaded_start = (load_uts - file_origin)
 
         # Ratio of distances should equal ratio of interpreted units
         assert (default_start.total_seconds() / loaded_start.total_seconds()
@@ -553,11 +479,8 @@ class TestLoadNetCDF(object):
         io.inst_to_netcdf(self.testInst, fname=outfile,
                           epoch_name=default_epoch_name)
 
-        tkwargs = decode_times_val(self.testInst.pandas_format)
-
         _, meta = io.load_netcdf(
-            outfile, pandas_format=self.testInst.pandas_format,
-            epoch_name=default_epoch_name, **tkwargs)
+            outfile, epoch_name=default_epoch_name, **decode_times)
 
         # Custom attribute correctly read from file
         if hasattr(meta, "header"):
@@ -585,22 +508,11 @@ class TestLoadNetCDF(object):
 
         # Load the written data
         input_kwargs = {"decode_times": decode_times,
-                        "pandas_format": self.testInst.pandas_format,
                         "epoch_origin": dt.datetime(1980, 1, 1),
                         "epoch_name": default_epoch_name}
 
-        # Not supported for pandas
-        if self.testInst.pandas_format:
-            testing.eval_bad_input(
-                io.load_netcdf, ValueError,
-                "`decode_times` not supported for pandas", input_args=[outfile],
-                input_kwargs=input_kwargs)
-
-            return
-
-        else:
-            # Apply to xarray instruments
-            self.loaded_inst, meta = io.load_netcdf(outfile, **input_kwargs)
+        # Apply to xarray instruments
+        self.loaded_inst = io.load_netcdf(outfile, **input_kwargs)
 
         if decode_times:
             # Times will be as in self.testInst
@@ -647,13 +559,10 @@ class TestLoadNetCDF(object):
         drop_list = [drop_label] if drop_labels else []
 
         # Load file
-        pformat = self.testInst.pandas_format
-        tkwargs = decode_times_val(pformat)
         self.loaded_inst, meta = io.load_netcdf(outfile,
                                                 drop_meta_labels=drop_list,
-                                                pandas_format=pformat,
                                                 epoch_name=default_epoch_name,
-                                                **tkwargs)
+                                                **decode_times)
 
         # Test for `drop_label` if it should or should not be present
         if drop_labels:
@@ -730,11 +639,7 @@ class TestLoadNetCDFXArray(TestLoadNetCDF):
         io.inst_to_netcdf(self.testInst, fname=outfile)
 
         # Load the written data
-        tkwargs = decode_times_val(self.testInst.pandas_format)
-
-        self.loaded_inst, meta = io.load_netcdf(
-            outfile, pandas_format=self.testInst.pandas_format, **kwargs,
-            **tkwargs)
+        self.loaded_inst = io.load_netcdf(outfile, **kwargs, **decode_times)
 
         # Check that labels pass through as correct type
         vars = ['uts', 'mlt', 'slt']
@@ -756,7 +661,7 @@ class TestLoadNetCDFXArray(TestLoadNetCDF):
         testing.eval_bad_input(
             io.load_netcdf, ValueError,
             "only supports 1D data in pandas", input_args=[outfile],
-            input_kwargs={"epoch_name": 'time', "pandas_format": True})
+            input_kwargs={"epoch_name": 'time'})
 
         return
 
@@ -785,14 +690,13 @@ class TestNetCDF4Integration(object):
         # variables allowed to be nan within metadata when exporting.
         self.testInst = gdm.Instrument('gdm', 'testing', num_samples=5)
         self.testInst.load(date=self.testInst.inst_module._test_dates[''][''])
-        self.pformat = self.testInst.pandas_format
 
         return
 
     def teardown_method(self):
         """Clean up the test environment."""
 
-        del self.testInst, self.pformat
+        del self.testInst
         return
 
     @pytest.mark.parametrize('use_method', [True, False])
@@ -1058,11 +962,9 @@ class TestNetCDF4Integration(object):
                 inv_trans[var] = key
 
         # Load the file
-        tkwargs = decode_times_val(self.testInst.pandas_format)
-
         data, meta = gdm.utils.io.load_netcdf(
-            outfile, meta_translation=inv_trans, pandas_format=self.pformat,
-            epoch_name=default_epoch_name, **tkwargs)
+            outfile, meta_translation=inv_trans, epoch_name=default_epoch_name,
+            **decode_times)
 
         # Confirm inverse translation worked
         attrs = list(meta.attrs())
@@ -1176,12 +1078,9 @@ class TestNetCDF4Integration(object):
                                            remove_labels=[])
 
         # Load the file
-        tkwargs = decode_times_val(self.testInst.pandas_format)
-
-        data, meta = gdm.utils.io.load_netcdf(
+        data = gdm.utils.io.load_netcdf(
             outfile, meta_processor=from_meta_proc,
-            pandas_format=self.pformat, epoch_name=default_epoch_name,
-            **tkwargs)
+            epoch_name=default_epoch_name, **decode_times)
 
         wstr = ''.join(['Incorrect metadata value after inverse processor for',
                         ' variable: {:} and label: {:}'])
@@ -1232,7 +1131,6 @@ class TestNetCDF4IntegrationXarray(TestNetCDF4Integration):
         # variables allowed to be nan within metadata when exporting.
         self.testInst = gdm.Instrument('gdm', 'ndtesting', num_samples=5)
         self.testInst.load(date=self.testInst.inst_module._test_dates[''][''])
-        self.pformat = self.testInst.pandas_format
 
         return
 
@@ -1247,7 +1145,6 @@ class TestNetCDF4IntegrationXarrayModels(TestNetCDF4Integration):
         # variables allowed to be nan within metadata when exporting.
         self.testInst = gdm.Instrument('gdm', 'testmodel', num_samples=5)
         self.testInst.load(date=self.testInst.inst_module._test_dates[''][''])
-        self.pformat = self.testInst.pandas_format
 
         return
 

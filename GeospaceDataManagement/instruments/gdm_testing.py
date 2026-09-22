@@ -185,7 +185,7 @@ def load(fnames, tag='', inst_id='', sim_multi_file_right=False,
         index = mm_test.non_unique_index(index)
 
     data.index = index
-    data.index.name = 'Epoch'
+    data.index.name = 'time'
 
     return data
 

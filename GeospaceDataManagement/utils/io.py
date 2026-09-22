@@ -234,24 +234,20 @@ def add_netcdf4_standards_to_metadict(inst, in_meta_dict, epoch_name,
         if datetime_flag:
             time_meta = return_epoch_metadata(inst, epoch_name)
             time_meta.pop('MonoTon')
-            if inst.pandas_format:
-                # Pandas file create will set long_name to 'Epoch'
-                pass
-            else:
-                # Convert times to integers
-                inst[var] = (inst[var].values.astype(np.int64)
-                             * 1.0E-6).astype(np.int64)
+
+            # Convert times to integers
+            inst[var] = (inst[var].values.astype(np.int64)
+                         * 1.0E-6).astype(np.int64)
 
             meta_dict.update(time_meta)
 
         meta_dict['Format'] = inst._get_var_type_code(coltype)
 
-        if not inst.pandas_format:
-            for i, dim in enumerate(list(inst[var].dims)):
-                meta_dict['Depend_{:1d}'.format(i)] = dim
-            num_dims = len(inst[var].dims)
-            if num_dims >= 2:
-                meta_dict['Display_Type'] = 'Multidimensional'
+        for i, dim in enumerate(list(inst[var].dims)):
+            meta_dict['Depend_{:1d}'.format(i)] = dim
+        num_dims = len(inst[var].dims)
+        if num_dims >= 2:
+            meta_dict['Display_Type'] = 'Multidimensional'
 
         # Update the meta data
         if lower_var in out_meta_dict:
@@ -572,337 +568,12 @@ def meta_array_expander(meta_dict):
 
 
 def load_netcdf(fnames, strict_meta=False, file_format='NETCDF4',
-                epoch_name=None, epoch_unit='ms', epoch_origin='unix',
-                pandas_format=True, decode_timedelta=False,
-                combine_by_coords=True, meta_kwargs=None,
-                meta_processor=None, meta_translation=None,
-                drop_meta_labels=None, decode_times=None,
-                strict_dim_check=True):
-    """Load netCDF-3/4 file produced by gdm.
-
-    Parameters
-    ----------
-    fnames : str or array_like
-        Filename(s) to load, will fail if None. (default=None)
-    strict_meta : bool
-        Flag that checks if metadata across `fnames` is the same if True
-        (default=False)
-    file_format : str
-        file_format keyword passed to netCDF4 routine.  Expects one of
-        'NETCDF3_CLASSIC', 'NETCDF3_64BIT', 'NETCDF4_CLASSIC', or 'NETCDF4'.
-        (default='NETCDF4')
-    epoch_name : str or NoneType
-        Data key for epoch variable.  The epoch variable is expected to be an
-        array of integer or float values denoting time elapsed from an origin
-        specified by `epoch_origin` with units specified by `epoch_unit`. This
-        epoch variable will be converted to a `DatetimeIndex` for consistency
-        across GeospaceDataManagement instruments. If None, then `epoch_name`
-        set by the `load_netcdf_pandas` or `load_netcdf_xarray` as appropriate.
-        (default=None)
-    epoch_unit : str
-        The pandas-defined unit of the epoch variable ('D', 's', 'ms', 'us',
-        'ns'). (default='ms')
-    epoch_origin : str or timestamp-convertable
-        Origin of epoch calculation, following convention for
-        `pandas.to_datetime`.  Accepts timestamp-convertable objects, as well as
-        two specific strings for commonly used calendars.  These conversions are
-        handled by `pandas.to_datetime`.
-        If ‘unix’ (or POSIX) time; origin is set to 1970-01-01.
-        If ‘julian’, `epoch_unit` must be ‘D’, and origin is set to beginning of
-        Julian Calendar. Julian day number 0 is assigned to the day starting at
-        noon on January 1, 4713 BC. (default='unix')
-    pandas_format : bool
-        Flag specifying if data is stored in a pandas DataFrame (True) or
-        xarray Dataset (False). (default=False)
-    decode_timedelta : bool
-        Used for xarray data (`pandas_format` is False).  If True, variables
-        with unit attributes that  are 'timelike' ('hours', 'minutes', etc) are
-        converted to `np.timedelta64`. (default=False)
-    combine_by_coords : bool
-        Used for xarray data (`pandas_format` is False) when loading a
-        multi-file dataset. If True, uses `xarray.combine_by_coords`. If False,
-        uses `xarray.combine_nested`. (default=True)
-    meta_kwargs : dict or NoneType
-        Dict to specify custom Meta initialization or None to use Meta
-        defaults (default=None)
-    meta_processor : function or NoneType
-        If not None, a dict containing all of the loaded metadata will be
-        passed to `meta_processor` which should return a filtered version
-        of the input dict. The returned dict is loaded into a gdm.Meta
-        instance and returned as `meta`. (default=None)
-    meta_translation : dict or NoneType
-        Translation table used to map metadata labels in the file to
-        those used by the returned `meta`. Keys are labels from file
-        and values are labels in `meta`. Redundant file labels may be
-        mapped to a single GeospaceDataManagement label. If None, will use
-        `default_from_netcdf_translation_table`. This feature
-        is maintained for file compatibility. To disable all translation,
-        input an empty dict. (default=None)
-    drop_meta_labels : list or NoneType
-        List of variable metadata labels that should be dropped. Applied
-        to metadata as loaded from the file. (default=None)
-    decode_times : bool or NoneType
-        If True, variables with unit attributes that are 'timelike' ('hours',
-        'minutes', etc) are converted to `np.timedelta64` by xarray. If False,
-        then `epoch_name` will be converted to datetime using `epoch_unit`
-        and `epoch_origin`. If None, will be set to False for backwards
-        compatibility. For xarray only. (default=None)
-    strict_dim_check : bool
-        Used for xarray data (`pandas_format` is False). If True, warn the user
-        that the desired epoch is not present in `xarray.dims`.  If False,
-        no warning is raised. (default=True)
-
-    Returns
-    -------
-    data : pandas.DataFrame or xarray.Dataset
-        Class holding file data
-    meta : gdm.Meta
-        Class holding file meta data
-
-    Raises
-    ------
-    KeyError
-        If epoch/time dimension could not be identified.
-    ValueError
-        When attempting to load data with more than 2 dimensions or if
-        `strict_meta` is True and meta data changes across files.
-
-    See Also
-    --------
-    load_netcdf_pandas, load_netcdf_xarray, pandas.to_datetime
-
-    """
-    # Load data by type
-    if pandas_format:
-        if decode_times is not None:
-            estr = ''.join(['`decode_times` not supported for pandas.'])
-            raise ValueError(estr)
-
-        data, meta = load_netcdf_pandas(fnames, strict_meta=strict_meta,
-                                        file_format=file_format,
-                                        epoch_name=epoch_name,
-                                        epoch_unit=epoch_unit,
-                                        epoch_origin=epoch_origin,
-                                        meta_kwargs=meta_kwargs,
-                                        meta_processor=meta_processor,
-                                        meta_translation=meta_translation,
-                                        drop_meta_labels=drop_meta_labels)
-    else:
-        data, meta = load_netcdf_xarray(fnames, strict_meta=strict_meta,
-                                        file_format=file_format,
-                                        epoch_name=epoch_name,
-                                        epoch_unit=epoch_unit,
-                                        epoch_origin=epoch_origin,
-                                        decode_timedelta=decode_timedelta,
-                                        combine_by_coords=combine_by_coords,
-                                        meta_kwargs=meta_kwargs,
-                                        meta_processor=meta_processor,
-                                        meta_translation=meta_translation,
-                                        drop_meta_labels=drop_meta_labels,
-                                        decode_times=decode_times,
-                                        strict_dim_check=strict_dim_check)
-
-    return data, meta
-
-
-def load_netcdf_pandas(fnames, strict_meta=False, file_format='NETCDF4',
-                       epoch_name='Epoch', epoch_unit='ms', epoch_origin='unix',
-                       meta_kwargs=None, meta_processor=None,
-                       meta_translation=None, drop_meta_labels=None):
-    """Load netCDF-3/4 file produced by GeospaceDataManagement as pandas format.
-
-    Parameters
-    ----------
-    fnames : str or array_like
-        Filename(s) to load
-    strict_meta : bool
-        Flag that checks if metadata across `fnames` is the same if True
-        (default=False)
-    file_format : str
-        file_format keyword passed to netCDF4 routine.  Expects one of
-        'NETCDF3_CLASSIC', 'NETCDF3_64BIT', 'NETCDF4_CLASSIC', or 'NETCDF4'.
-        (default='NETCDF4')
-    epoch_name : str or NoneType
-        Data key for epoch variable.  The epoch variable is expected to be an
-        array of integer or float values denoting time elapsed from an origin
-        specified by `epoch_origin` with units specified by `epoch_unit`. This
-        epoch variable will be converted to a `DatetimeIndex` for consistency
-        across GeospaceDataManagement instruments.  (default='Epoch')
-    epoch_unit : str
-        The pandas-defined unit of the epoch variable ('D', 's', 'ms', 'us',
-        'ns'). (default='ms')
-    epoch_origin : str or timestamp-convertable
-        Origin of epoch calculation, following convention for
-        `pandas.to_datetime`.  Accepts timestamp-convertable objects, as well as
-        two specific strings for commonly used calendars.  These conversions are
-        handled by `pandas.to_datetime`.
-        If ‘unix’ (or POSIX) time; origin is set to 1970-01-01.
-        If ‘julian’, `epoch_unit` must be ‘D’, and origin is set to beginning of
-        Julian Calendar. Julian day number 0 is assigned to the day starting at
-        noon on January 1, 4713 BC. (default='unix')
-    meta_kwargs : dict or NoneType
-        Dict to specify custom Meta initialization or None to use Meta
-        defaults (default=None)
-    meta_processor : function or NoneType
-        If not None, a dict containing all of the loaded metadata will be
-        passed to `meta_processor` which should return a filtered version
-        of the input dict. The returned dict is loaded into a gdm.Meta
-        instance and returned as `meta`. (default=None)
-    meta_translation : dict or NoneType
-        Translation table used to map metadata labels in the file to
-        those used by the returned `meta`. Keys are labels from file
-        and values are labels in `meta`. Redundant file labels may be
-        mapped to a single GeospaceDataManagement label. If None, will use
-        `default_from_netcdf_translation_table`. This feature
-        is maintained for file compatibility. To disable all translation,
-        input an empty dict. (default=None)
-    drop_meta_labels : list or NoneType
-        List of variable metadata labels that should be dropped. Applied
-        to metadata as loaded from the file. (default=None)
-
-    Returns
-    -------
-    data : pandas.DataFrame
-        Class holding file data
-
-    Raises
-    ------
-    KeyError
-        If epoch/time dimension could not be identified.
-    ValueError
-        When attempting to load data with more than 2 dimensions, or if
-        `strict_meta` is True and meta data changes across files, or if
-        epoch/time dimension could not be identified.
-
-    See Also
-    --------
-    load_netcdf
-
-    """
-    raise RuntimeError('fix for new meta handling')
-
-    if epoch_name is None:
-        dstr = ''.join(['Assigning "Epoch" for time index. In the future, '
-                        'this will be updated to "time." Set a value ',
-                        'for `epoch_name` to silence this warning.'])
-        warnings.warn(dstr, DeprecationWarning, stacklevel=2)
-        epoch_name = 'Epoch'
-
-    # Ensure inputs are in the correct format
-    fnames = gdm.utils.listify(fnames)
-    file_format = file_format.upper()
-
-    # Initialize local variables
-    saved_meta = None
-    running_idx = 0
-    running_store = []
-
-    if meta_kwargs is None:
-        meta_kwargs = {}
-
-    meta = gdm.Meta(**meta_kwargs)
-
-    # Store all metadata in a dict that may be filtered before
-    # assignment to `meta`.
-    full_mdict = {}
-
-    if meta_translation is None:
-        # Assign default translation using `meta`
-        meta_translation = default_from_netcdf_translation_table(meta)
-
-    # Drop metadata labels initialization
-    if drop_meta_labels is None:
-        drop_meta_labels = []
-    else:
-        drop_meta_labels = gdm.utils.listify(drop_meta_labels)
-
-    # Load data for each file
-    for fname in fnames:
-        with netCDF4.Dataset(fname, mode='r', format=file_format) as data:
-            # Build a dictionary with all global ncattrs and add those
-            # attributes to a gdm.MetaHeader object.
-            for ncattr in data.ncattrs():
-                setattr(meta.header, ncattr, data.getncattr(ncattr))
-
-            # Load the metadata.  From here group unique dimensions and
-            # act accordingly, 1D, 2D, 3D.
-            loaded_vars = {}
-            for key in data.variables.keys():
-                if len(data.variables[key].dimensions) == 1:
-                    # Load 1D data variables, assuming time is the dimension.
-                    loaded_vars[key] = data.variables[key][:]
-
-                    # Load up metadata
-                    meta_dict = {}
-                    for nc_key in data.variables[key].ncattrs():
-                        meta_dict[nc_key] = data.variables[key].getncattr(
-                            nc_key)
-                    full_mdict[key] = meta_dict
-
-                if len(data.variables[key].dimensions) >= 2:
-                    raise ValueError(''.join(('GeospaceDataManagement only ',
-                                              'supports 1D data in pandas. ',
-                                              'Please use xarray for this ',
-                                              'file.')))
-
-            # Prepare dataframe index for this netcdf file
-            if epoch_name not in loaded_vars.keys():
-                estr = ''.join(['Epoch label: "', epoch_name, '"',
-                                ' was not found in loaded dimensions [',
-                                ', '.join(loaded_vars.keys()), ']'])
-                raise KeyError(estr)
-
-            time_var = loaded_vars.pop(epoch_name)
-            loaded_vars[epoch_name] = pds.to_datetime(time_var, unit=epoch_unit,
-                                                      origin=epoch_origin)
-            running_store.append(loaded_vars)
-            running_idx += len(loaded_vars[epoch_name])
-
-            if strict_meta:
-                if saved_meta is None:
-                    saved_meta = full_mdict.copy()
-                elif full_mdict != saved_meta:
-                    raise ValueError(' '.join(('Metadata across filenames',
-                                               'is not the same.')))
-
-    # Combine all of the data loaded across files together
-    out = []
-    for item in running_store:
-        out.append(pds.DataFrame.from_records(item, index=epoch_name))
-    data = pds.concat(out, axis=0)
-
-    # Process the metadata. First, drop labels as requested.
-    for var in full_mdict:
-        for label in drop_meta_labels:
-            if label in full_mdict[var]:
-                full_mdict[var].pop(label)
-
-    # Remove some items GeospaceDataManagement added for netcdf compatibility.
-    filt_mdict = remove_netcdf4_standards_from_meta(full_mdict, epoch_name,
-                                                    meta.labels)
-    # Translate labels from file to GeospaceDataManagement compatible labels
-    # using `meta_translation`.
-    filt_mdict = apply_table_translation_from_file(meta_translation, filt_mdict)
-
-    # Next, allow processing by developers so they can deal with
-    # issues with specific files.
-    if meta_processor is not None:
-        filt_mdict = meta_processor(filt_mdict)
-
-    # Meta cannot take array data, if present save it as seperate meta data
-    # labels.
-    filt_mdict = meta_array_expander(filt_mdict)
-
-    return data
-
-
-def load_netcdf_xarray(fnames, strict_meta=False, file_format='NETCDF4',
-                       epoch_name='time', epoch_unit='ms', epoch_origin='unix',
-                       decode_timedelta=False, combine_by_coords=True,
-                       meta_kwargs=None, meta_processor=None,
-                       meta_translation=None, drop_meta_labels=None,
-                       decode_times=False, strict_dim_check=True):
-    """Load netCDF-3/4 file produced by GeospaceDataManagement into xarray.
+                epoch_name='time', epoch_unit='ms', epoch_origin='unix',
+                decode_timedelta=False, combine_by_coords=True,
+                meta_kwargs=None, meta_processor=None,
+                meta_translation=None, drop_meta_labels=None,
+                decode_times=False, strict_dim_check=True):
+    """Load netCDF-3/4 file produced by GeospaceDataManagement.
 
     Parameters
     ----------
@@ -937,9 +608,9 @@ def load_netcdf_xarray(fnames, strict_meta=False, file_format='NETCDF4',
         If True, variables with unit attributes that are 'timelike' ('hours',
         'minutes', etc) are converted to `np.timedelta64`. (default=False)
     combine_by_coords : bool
-        Used for xarray data (`pandas_format` is False) when loading a
-        multi-file dataset. If True, uses `xarray.combine_by_coords`. If False,
-        uses `xarray.combine_nested`. (default=True)
+        Used when loading a multi-file dataset. If True, uses
+        `xarray.combine_by_coords`. If False, uses `xarray.combine_nested`.
+        (default=True)
     meta_kwargs : dict or NoneType
         Dict to specify custom Meta initialization or None to use Meta
         defaults (default=None)
@@ -966,16 +637,13 @@ def load_netcdf_xarray(fnames, strict_meta=False, file_format='NETCDF4',
         and `epoch_origin`. If None, will be set to False for backwards
         compatibility. (default=None)
     strict_dim_check : bool
-        Used for xarray data (`pandas_format` is False). If True, warn the user
-        that the desired epoch is not present in `xarray.dims`.  If False,
-        no warning is raised. (default=True)
+        If True, warn the user that the desired epoch is not present in
+        `xarray.dims`.  If False, no warning is raised. (default=True)
 
     Returns
     -------
     data : xarray.Dataset
         Class holding file data
-    meta : gdm.Meta
-        Class holding file meta data
 
     See Also
     --------
@@ -1001,8 +669,6 @@ def load_netcdf_xarray(fnames, strict_meta=False, file_format='NETCDF4',
     # Initialize local variables
     if meta_kwargs is None:
         meta_kwargs = {}
-
-    meta = gdm.Meta(**meta_kwargs)
 
     # Store all metadata in a dict that may be filtered before
     # assignment to `meta`.
@@ -1335,15 +1001,8 @@ def inst_to_netcdf(inst, fname, base_instrument=None, epoch_name=None,
     """
     # Check epoch name information
     if epoch_name is None:
-        if inst.pandas_format:
-            dstr = ''.join(['Assigning "Epoch" for time label when written',
-                            ' to file. In the future, the default will ',
-                            'be updated to "time."'])
-            warnings.warn(dstr, DeprecationWarning, stacklevel=2)
-            epoch_name = 'Epoch'
-        else:
-            gdm.logger.debug('Assigning "time" for time index.')
-            epoch_name = 'time'
+        gdm.logger.debug('Assigning "time" for time index.')
+        epoch_name = 'time'
 
     # Ensure there is data to write
     if inst.empty:
@@ -1497,157 +1156,63 @@ def inst_to_netcdf(inst, fname, base_instrument=None, epoch_name=None,
     if meta_processor is not None:
         export_meta = meta_processor(export_meta)
 
-    # Handle output differently, depending on data format.
-    if inst.pandas_format:
-        # General process for writing data:
-        # 1) take care of the EPOCH information,
-        # 2) iterate over the variable colums in Instrument.data and check
-        #    the type of data,
-        #    - if 1D column:
-        #      A) do simple write (type is not an object)
-        #      B) if it is an object, then check if writing strings
-        #      C) if not strings, write object
-        #    - if column is a Series of Frames, write as 2D variables
-        # 3) metadata must be filtered before writing to netCDF4, since
-        #    string variables can't have a fill value
-        with netCDF4.Dataset(fname, mode=mode, format='NETCDF4') as out_data:
-            # Attach the global attributes
-            out_data.setncatts(attrb_dict)
+    # Attach the metadata to a separate xarray.Dataset object, ensuring
+    # the Instrument data object is unchanged. The downside is additional
+    # memory use which will impact extremely large data files or memory
+    # constrained environments.
+    xr_data = inst.data.copy()
 
-            # Specify the number of items, to reduce function calls.
-            num = len(inst.index)
+    # Convert datetime values into integers as done for pandas
+    xr_data['time'] = unix_time.astype(np.int64)
 
-            # Write out the datetime index
-            if unlimited_time:
-                out_data.createDimension(epoch_name, None)
-            else:
-                out_data.createDimension(epoch_name, num)
-            cdfkey = out_data.createVariable(epoch_name, 'i8',
-                                             dimensions=(epoch_name),
-                                             zlib=zlib,
-                                             complevel=complevel,
-                                             shuffle=shuffle)
+    # Update 'time' dimension to `epoch_name`
+    if epoch_name != 'time':
+        xr_data = xr_data.rename({'time': epoch_name})
 
-            # Attach epoch metadata
-            cdfkey.setncatts(export_meta[epoch_name])
+    # Transfer metadata
+    gdm_meta_to_xarray_attr(xr_data, export_meta, epoch_name)
 
-            # Attach the time index to the data
-            cdfkey[:] = unix_time.astype(np.int64)
+    # If the case needs to be preserved, update Dataset variables.
+    if preserve_meta_case:
+        for var in xarray_vars_no_time(xr_data, time_label=epoch_name):
+            # Use the variable case stored in the MetaData object
+            case_var = inst.meta.var_case_name(var)
 
-            # Iterate over all of the columns in the Instrument dataframe
-            # check what kind of data we are dealing with, then store
-            for key in inst.variables:
-                # Get information on type data we are dealing with.  `data` is
-                # data in prior type (multiformat support).  `coltype` is the
-                # direct type, and np.int64 and datetime_flag lets you know if
-                # the data is full of time information.
-                if preserve_meta_case:
-                    # Use the variable case stored in the MetaData object
-                    case_key = inst.meta.var_case_name(key)
-                else:
-                    # Use variable names used by user when working with data
-                    case_key = key
-                lower_key = key.lower()
+            if case_var != var:
+                xr_data = xr_data.rename({var: case_var})
 
-                data, coltype, datetime_flag = inst._get_data_info(inst[key])
+    # Set the standard encoding values
+    encoding = {var: {'zlib': zlib, 'complevel': complevel,
+                      'shuffle': shuffle} for var in xr_data.keys()}
 
-                # Operate on data based upon type
-                if type(inst[key].dtype) not in [type(np.dtype('O')),
-                                                 pds.StringDtype]:
-                    # Not an object, normal basic 1D data.
-                    cdfkey = out_data.createVariable(case_key, coltype,
-                                                     dimensions=(epoch_name),
-                                                     zlib=zlib,
-                                                     complevel=complevel,
-                                                     shuffle=shuffle)
-                    # Set metadata
-                    cdfkey.setncatts(export_meta[lower_key])
+    # netCDF4 doesn't support compression for string data. Reset values
+    # in `encoding` for data found to be string type.
+    for var in xr_data.keys():
+        vtype = xr_data[var].dtype
 
-                    # Assign data
-                    if datetime_flag:
-                        # Datetime is in nanoseconds, storing milliseconds.
-                        cdfkey[:] = (data.values.astype(coltype)
-                                     * 1.0E-6).astype(coltype)
-                    else:
-                        # Not datetime data, just store as is.
-                        cdfkey[:] = data.values.astype(coltype)
-                else:
-                    if '_FillValue' in export_meta[lower_key].keys():
-                        str_fill = export_meta[lower_key]['_FillValue']
-                        del export_meta[lower_key]['_FillValue']
-                    else:
-                        str_fill = ''
+        # Account for possible type for unicode strings
+        if vtype == np.dtype('<U4'):
+            vtype = str
+            # TODO(#1102): xarray does not yet support '_FillValue' for
+            # unicode strings (https://github.com/pydata/xarray/issues/1647)
+            if '_FillValue' in xr_data[var].attrs:
+                del xr_data[var].attrs['_FillValue']
+        elif vtype == str:
+            encoding[var]['dtype'] = 'S1'
 
-                    cdfkey = out_data.createVariable(case_key, coltype,
-                                                     dimensions=epoch_name,
-                                                     complevel=complevel,
-                                                     shuffle=shuffle,
-                                                     fill_value=str_fill)
+        if vtype == str:
+            encoding[var]['zlib'] = False
 
-                    # Set metadata
-                    cdfkey.setncatts(export_meta[lower_key])
+    if unlimited_time:
+        xr_data.encoding['unlimited_dims'] = {epoch_name: True}
 
-                    # Time to actually write the data now
-                    cdfkey[:] = np.array(data.values)
+    # Add general attributes
+    xr_data.attrs = attrb_dict
 
-    else:
-        # Attach the metadata to a separate xarray.Dataset object, ensuring
-        # the Instrument data object is unchanged. The downside is additional
-        # memory use which will impact extremely large data files or memory
-        # constrained environments.
-        xr_data = inst.data.copy()
+    # Write the netCDF4 file
+    xr_data.to_netcdf(fname, mode=mode, encoding=encoding)
 
-        # Convert datetime values into integers as done for pandas
-        xr_data['time'] = unix_time.astype(np.int64)
-
-        # Update 'time' dimension to `epoch_name`
-        if epoch_name != 'time':
-            xr_data = xr_data.rename({'time': epoch_name})
-
-        # Transfer metadata
-        gdm_meta_to_xarray_attr(xr_data, export_meta, epoch_name)
-
-        # If the case needs to be preserved, update Dataset variables.
-        if preserve_meta_case:
-            for var in xarray_vars_no_time(xr_data, time_label=epoch_name):
-                # Use the variable case stored in the MetaData object
-                case_var = inst.meta.var_case_name(var)
-
-                if case_var != var:
-                    xr_data = xr_data.rename({var: case_var})
-
-        # Set the standard encoding values
-        encoding = {var: {'zlib': zlib, 'complevel': complevel,
-                          'shuffle': shuffle} for var in xr_data.keys()}
-
-        # netCDF4 doesn't support compression for string data. Reset values
-        # in `encoding` for data found to be string type.
-        for var in xr_data.keys():
-            vtype = xr_data[var].dtype
-
-            # Account for possible type for unicode strings
-            if vtype == np.dtype('<U4'):
-                vtype = str
-                # TODO(#1102): xarray does not yet support '_FillValue' for
-                # unicode strings (https://github.com/pydata/xarray/issues/1647)
-                if '_FillValue' in xr_data[var].attrs:
-                    del xr_data[var].attrs['_FillValue']
-            elif vtype == str:
-                encoding[var]['dtype'] = 'S1'
-
-            if vtype == str:
-                encoding[var]['zlib'] = False
-
-        if unlimited_time:
-            xr_data.encoding['unlimited_dims'] = {epoch_name: True}
-
-        # Add general attributes
-        xr_data.attrs = attrb_dict
-
-        # Write the netCDF4 file
-        xr_data.to_netcdf(fname, mode=mode, encoding=encoding)
-
-        # Close for safety
-        xr_data.close()
+    # Close for safety
+    xr_data.close()
 
     return

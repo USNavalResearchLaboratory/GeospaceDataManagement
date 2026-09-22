@@ -76,12 +76,11 @@ _test_download_ci = {'': {'': False}}
 
 # ----------------------------------------------------------------------------
 # Instrument methods
-def init(self, pandas_format=True):
+def init(self):
     """Initialize the Instrument object with instrument specific values."""
 
     self.acknowledgements = "Acknowledgements missing from file"
     self.references = "References missing from file"
-    self.pandas_format = pandas_format
 
     return
 
@@ -139,7 +138,7 @@ def download(date_array, tag, inst_id, data_path=None):
 
 def load(fnames, tag='', inst_id='', strict_meta=False, file_format='NETCDF4',
          epoch_name=None, epoch_unit='ms', epoch_origin='unix',
-         pandas_format=True, decode_timedelta=False, meta_kwargs=None,
+         decode_timedelta=False, meta_kwargs=None,
          meta_processor=None, meta_translation=None,
          drop_meta_labels=None, decode_times=None):
     """Load locally-created NetCDF data.
@@ -180,13 +179,9 @@ def load(fnames, tag='', inst_id='', strict_meta=False, file_format='NETCDF4',
         If ‘julian’, `epoch_unit` must be ‘D’, and origin is set to beginning of
         Julian Calendar. Julian day number 0 is assigned to the day starting at
         noon on January 1, 4713 BC. (default='unix')
-    pandas_format : bool
-        Flag specifying if data is stored in a pandas DataFrame (True) or
-        xarray Dataset (False). (default=False)
     decode_timedelta : bool
-        Used for xarray data (`pandas_format` is False).  If True, variables
-        with unit attributes that  are 'timelike' ('hours', 'minutes', etc) are
-        converted to `np.timedelta64`. (default=False)
+        If True, variables with unit attributes that  are 'timelike' ('hours',
+        'minutes', etc) are converted to `np.timedelta64`. (default=False)
     meta_kwargs : dict or NoneType
         Dict to specify custom Meta initialization or None to use Meta
         defaults (default=None)
@@ -226,7 +221,6 @@ def load(fnames, tag='', inst_id='', strict_meta=False, file_format='NETCDF4',
                                     epoch_name=epoch_name,
                                     epoch_unit=epoch_unit,
                                     epoch_origin=epoch_origin,
-                                    pandas_format=pandas_format,
                                     decode_timedelta=decode_timedelta,
                                     meta_kwargs=meta_kwargs,
                                     meta_processor=meta_processor,

@@ -106,19 +106,12 @@ class TestUpdateFill(object):
                     and type(inst[var].dtype) in str_types
                     and inst.meta[var, inst.meta.labels.fill_val] is not None]
 
-        if inst.pandas_format:
-            num_vars = [var for var in inst.variables if var in inst.meta.keys()
-                        and inst._get_var_type_code(inst[var].dtype)[0]
-                        in ['i', 'u', 'f']
-                        and inst.meta[var, inst.meta.labels.fill_val]
-                        is not None]
-        else:
-            num_vars = [var for var in inst.variables if var in inst.meta.keys()
-                        and var not in inst.data.coords.keys()
-                        and inst._get_var_type_code(inst[var].dtype)[0]
-                        in ['i', 'u', 'f']
-                        and inst.meta[var, inst.meta.labels.fill_val]
-                        is not None]
+        num_vars = [var for var in inst.variables if var in inst.meta.keys()
+                    and var not in inst.data.coords.keys()
+                    and inst._get_var_type_code(inst[var].dtype)[0]
+                    in ['i', 'u', 'f']
+                    and inst.meta[var, inst.meta.labels.fill_val]
+                    is not None]
 
         for var in num_vars:
             inst[0, var] = inst.meta[var, inst.meta.labels.fill_val]

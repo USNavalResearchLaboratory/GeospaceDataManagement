@@ -27,7 +27,6 @@ from GeospaceDataManagement.instruments.methods import testing as mm_test
 platform = 'gdm'
 name = 'ndtesting'
 
-pandas_format = False
 tags = {'': 'Regular testing data set'}
 inst_ids = {'': [tag for tag in tags.keys()]}
 _test_dates = {'': {tag: dt.datetime(2009, 1, 1) for tag in tags.keys()}}

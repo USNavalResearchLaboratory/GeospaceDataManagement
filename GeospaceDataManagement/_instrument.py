@@ -127,7 +127,7 @@ class Instrument(object):
     custom_kwargs : list
         List of dictionaries with keywords and values to be passed
         to a custom function
-    data : pandas.DataFrame or xarray.Dataset
+    data : xarray.Dataset
         Class object holding the loaded science data
     date : dt.datetime or NoneType
         Date and time for loaded data, None if no data is loaded
@@ -144,9 +144,6 @@ class Instrument(object):
     load_step : dt.timedelta
         The temporal increment for loading data, defaults to a timestep of one
         day
-    pandas_format : bool
-        Flag indicating whether `data` is stored as a pandas.DataFrame (True)
-        or an xarray.Dataset (False)
     today : dt.datetime
         Date and time for the current day in UT
     tomorrow : dt.datetime
@@ -233,7 +230,7 @@ class Instrument(object):
 
         # Instantiate `gdm.Instrument`
         inst = gdm.Instrument(platform, name, inst_id=inst_id, tag=tag,
-                                custom=custom)
+                              custom=custom)
 
     """
 
@@ -399,8 +396,9 @@ class Instrument(object):
                                           'iterable string',
                                           '[{:}]'.format(self.file_format)]))
 
-        # Assign null data for user selected data type, `_null_data` assigned
-        # when `self.pandas_format` is set in `_assign_attrs`.
+        # Assign data to null data
+        self._null_data = xr.Dataset(None)
+        self._data_library = xr.Dataset
         self.data = self._null_data.copy()
 
         # Nano-kernel processing variables. Feature processes data on each load.
@@ -499,10 +497,6 @@ class Instrument(object):
         if not isinstance(other, self.__class__):
             return False
 
-        # Check if both objects are the same data type. Exit early if not.
-        if self.pandas_format != other.pandas_format:
-            return False
-
         # Both the same data type, do both have data?
         if self.empty and other.empty:
             # This check needed to establish next check
@@ -553,18 +547,7 @@ class Instrument(object):
                     return False
             else:
                 # Data comparison area. Established earlier both have data.
-                if self.pandas_format:
-                    try:
-                        # Check is sensitive to the index labels. Errors
-                        # if index is not identical.
-                        checks.append(np.all(self.__dict__[key]
-                                             == other.__dict__[key]))
-                    except ValueError:
-                        return False
-
-                else:
-                    checks.append(xr.Dataset.equals(self.data,
-                                                    other.data))
+                checks.append(xr.Dataset.equals(self.data, other.data))
 
         # Confirm that other Instrument object doesn't have extra terms
         for key in other.__dict__.keys():
@@ -682,88 +665,6 @@ class Instrument(object):
         return output_str
 
     def __getitem__(self, key, data=None):
-        """Access data in `gdm.Instrument` or provided data object.
-
-        Parameters
-        ----------
-        key : str, tuple, or dict
-            Data variable name, tuple with a slice, or dict used to locate
-            desired data.
-        data : pds.DataFrame, xr.Dataset, or NoneType
-            Desired data object to select from or None to use `data` attribute
-
-        Raises
-        ------
-        ValueError
-            When an underlying error for data access is raised
-
-        Notes
-        -----
-        `inst['name']` is equivalent to `inst.data.name`
-
-        See pandas or xarray .loc and .iloc documentation for more details
-
-        Examples
-        --------
-        ::
-
-            # By name
-            inst['name']
-
-            # By list of names
-            inst[['name1', 'name2']]
-
-            # By position
-            inst[row_index, 'name']
-
-            # Slicing by row
-            inst[row1:row2, 'name']
-
-            # By Date
-            inst[datetime, 'name']
-
-            # Slicing by date, inclusive.
-            inst[datetime1:datetime2, 'name']
-
-            # Slicing by name and row/date (pandas only)
-            inst[datetime1:datetime2, 'name1':'name2']
-
-        """
-        if data is None:
-            data = self.data
-
-        if self.pandas_format:
-            if isinstance(key, str):
-                return data[key]
-            elif isinstance(key, tuple):
-                try:
-                    # Pass keys directly through
-                    return data.loc[key[0], key[1]]
-                except (KeyError, TypeError) as err1:
-                    # TypeError for single integer. KeyError for list, array,
-                    # slice of integers. Assume key[0] is integer
-                    # (including list or slice).
-                    try:
-                        return data.loc[data.index[key[0]], key[1]]
-                    except IndexError as err2:
-                        err_message = '\n'.join(("original messages:",
-                                                 str(err1), str(err2)))
-                        raise ValueError(''.join((
-                            "Check requested indexes, data may not exist. ",
-                            "Requested variable: ", repr(key[1]), ", requested",
-                            " indexes: ", repr(key[0]), ". ", err_message)))
-            else:
-                try:
-                    # Integer based indexing
-                    return data.iloc[key]
-                except (TypeError, ValueError):
-                    # If it's not an integer, TypeError is thrown. If it's a
-                    # list, ValueError is thrown.
-                    return data[key]
-        else:
-            return self.__getitem_xarray__(key, data=data)
-
-    def __getitem_xarray__(self, key, data=None):
         """Access data in `gdm.Instrument` object with `xarray.Dataset`.
 
         Parameters
@@ -788,8 +689,6 @@ class Instrument(object):
         Notes
         -----
         inst['name'] is `inst.data.name`
-
-        See xarray `.loc` and `.iloc` documentation for more details
 
         Examples
         --------
@@ -948,149 +847,113 @@ class Instrument(object):
 
         new = copy.deepcopy(new_data)
 
-        # Add data to main pandas.DataFrame, depending upon the input
-        # slice, and a name
-        if self.pandas_format:
-            if isinstance(key, tuple):
-                # Evaluate the data type used for indexing
-                if issubclass(type(key[0]), slice):
-                    if key[0].start is None:
-                        eval_type = type(key[0].stop)
-                    else:
-                        eval_type = type(key[0].start)
-                elif type(key[0]) in [list, np.ndarray]:
-                    if len(key[0]) > 0:
-                        eval_type = type(key[0][0])
-                    else:
-                        eval_type = type(key[0])
-                else:
-                    eval_type = type(key[0])
+        # xarray format chosen for Instrument object
+        if not isinstance(new, dict):
+            new = {'data': new}
+        in_data = new.pop('data')
 
-                # Check and see if the first key is a valid instance of the
-                # existing index
-                if np.all(['datetime' in str(etype).lower() for etype in [
-                        eval_type, type(self.data.index.dtype)]]):
-                    self.data.loc[key[0], key[1]] = new
-                else:
-                    self.data.loc[self.data.index[key[0]], key[1]] = new
-
-                return
-            elif not isinstance(new, dict):
-                # Make it a dict to simplify downstream processing
-                new = {'data': new}
-
-            # Input dict must have data in 'data',
-            # the rest of the keys are presumed to be metadata TODO-xarray
-            in_data = new.pop('data')
-
-            # Assign data
-            self.data[key] = in_data
-
+        epoch_names = self._get_epoch_name_from_data()
+        if len(epoch_names) == 0:
+            raise ValueError(' '.join(('Unsupported time index name,',
+                                       '"Epoch" or "time".')))
         else:
-            # xarray format chosen for Instrument object
-            if not isinstance(new, dict):
-                new = {'data': new}
-            in_data = new.pop('data')
+            if len(epoch_names) > 1:
+                gdm.logger.error("".join(["Multiple standard time index ",
+                                          "names found, defaulting to ",
+                                          epoch_names[0]]))
+            epoch_name = epoch_names[0]
 
-            epoch_names = self._get_epoch_name_from_data()
-            if len(epoch_names) == 0:
-                raise ValueError(' '.join(('Unsupported time index name,',
-                                           '"Epoch" or "time".')))
-            else:
-                if len(epoch_names) > 1:
-                    gdm.logger.error("".join(["Multiple standard time index ",
-                                              "names found, defaulting to ",
-                                              epoch_names[0]]))
-                epoch_name = epoch_names[0]
+        if isinstance(key, tuple):
+            # User provided more than one thing in assignment location
+            # something like, index integers and a variable name,
+            # self[idx, 'variable'] = stuff
+            # or, self[idx1, idx2, idx3, 'variable'] = stuff.
+            var_key = key[-1]
+            ind_keys = key[:-1]
 
-            if isinstance(key, tuple):
-                # User provided more than one thing in assignment location
-                # something like, index integers and a variable name,
-                # self[idx, 'variable'] = stuff
-                # or, self[idx1, idx2, idx3, 'variable'] = stuff.
-                var_key = key[-1]
-                ind_keys = key[:-1]
+            # Construct dictionary of dimensions and locations for
+            # xarray standards.
+            indict = {}
+            for i, dim in enumerate(self[var_key].dims):
+                if i < len(ind_keys):
+                    indict[dim] = ind_keys[i]
 
-                # Construct dictionary of dimensions and locations for
-                # xarray standards.
-                indict = {}
-                for i, dim in enumerate(self[var_key].dims):
-                    if i < len(ind_keys):
-                        indict[dim] = ind_keys[i]
+            # Try loading using two different methods, using a catch
+            try:
+                # Try loading as values
+                self.data[var_key].loc[indict] = in_data
+            except (TypeError, KeyError, IndexError):
+                # Original code
+                # Try loading indexed as integers
+                self.data[key[-1]][indict] = in_data
 
-                # Try loading using two different methods, using a catch
-                try:
-                    # Try loading as values
-                    self.data[var_key].loc[indict] = in_data
-                except (TypeError, KeyError, IndexError):
-                    # Original code
-                    # Try loading indexed as integers
-                    self.data[key[-1]][indict] = in_data
-
-                return
-            elif isinstance(key, str):
-                # Assigning basic variables
-                if isinstance(in_data, (xr.DataArray, tuple)):
-                    # If xarray or tuple input, take as is
-                    self.data[key] = in_data
-                elif len(np.shape(in_data)) <= 1:
-                    # If not an xarray input, but still iterable, then we
-                    # go through to process the input
-                    if key in self.variables and (
-                            np.shape(in_data) == np.shape(self.data[key])):
-                        # The ND input has the same shape as the current data
-                        # and can be assigned directly without adjusting the
-                        # dimensions. Only works with existing data.
-                        self.data[key] = (self.data[key].dims, in_data)
-                    elif np.shape(in_data) == np.shape(self.index):
-                        # 1D input has the correct length for storage along
-                        # 'Epoch'.
-                        self.data[key] = (epoch_name, in_data)
-                    elif len(np.shape(in_data)) == 0 or len(in_data) == 1:
-                        # Only a single number, or single in iterable.
-                        if key in self.variables:
-                            # If it already exists, assign as defined.
-                            in_data = np.squeeze(in_data)
-                            if np.shape(self.data[key]) == np.shape(in_data):
-                                self.data[key] = in_data
-                            else:
-                                raise ValueError(' '.join(('Shape of input',
-                                                           'does not match',
-                                                           'existing shape of',
-                                                           key)))
+            return
+        elif isinstance(key, str):
+            # Assigning basic variables
+            if isinstance(in_data, (xr.DataArray, tuple)):
+                # If xarray or tuple input, take as is
+                self.data[key] = in_data
+            elif isinstance(in_data, pds.DataFrame):
+                # If pandas, convert into xarray
+                self.data[key] = in_data.to_xarray()
+            elif len(np.shape(in_data)) <= 1:
+                # If not an xarray input, but still iterable, then we
+                # go through to process the input
+                if key in self.variables and (
+                        np.shape(in_data) == np.shape(self.data[key])):
+                    # The ND input has the same shape as the current data
+                    # and can be assigned directly without adjusting the
+                    # dimensions. Only works with existing data.
+                    self.data[key] = (self.data[key].dims, in_data)
+                elif np.shape(in_data) == np.shape(self.index):
+                    # 1D input has the correct length for storage along
+                    # 'Epoch'.
+                    self.data[key] = (epoch_name, in_data)
+                elif len(np.shape(in_data)) == 0 or len(in_data) == 1:
+                    # Only a single number, or single in iterable.
+                    if key in self.variables:
+                        # If it already exists, assign as defined.
+                        in_data = np.squeeze(in_data)
+                        if np.shape(self.data[key]) == np.shape(in_data):
+                            self.data[key] = in_data
                         else:
-                            # Otherwise broadcast over time.
-                            warnings.warn(' '.join(('Input for {:}'.format(key),
-                                                    'is a single value.',
-                                                    'Broadcast over epoch.')))
-                            in_data = gdm.utils.listify(in_data)
-                            self.data[key] = (epoch_name,
-                                              in_data * len(self.index))
-                    elif len(in_data) == 0:
-                        # Provided an empty iterable, make everything NaN
-                        warnings.warn(' '.join(('Input for {:} is'.format(key),
-                                                'empty. Setting to broadcast',
-                                                'as NaN over epoch.')))
-                        self.data[key] = (epoch_name,
-                                          [np.nan] * len(self.index))
+                            raise ValueError(' '.join(('Shape of input',
+                                                       'does not match',
+                                                       'existing shape of',
+                                                       key)))
                     else:
-                        raise ValueError(' '.join(('Input for {:}'.format(key),
-                                                   'does not match expected',
-                                                   'dimensions. Value not',
-                                                   'set.')))
+                        # Otherwise broadcast over time.
+                        warnings.warn(' '.join(('Input for {:}'.format(key),
+                                                'is a single value.',
+                                                'Broadcast over epoch.')))
+                        in_data = gdm.utils.listify(in_data)
+                        self.data[key] = (epoch_name,
+                                          in_data * len(self.index))
+                elif len(in_data) == 0:
+                    # Provided an empty iterable, make everything NaN
+                    warnings.warn(' '.join(('Input for {:} is'.format(key),
+                                            'empty. Setting to broadcast',
+                                            'as NaN over epoch.')))
+                    self.data[key] = (epoch_name,
+                                      [np.nan] * len(self.index))
                 else:
-                    # Multidimensional input that is not an xarray.  The user
-                    # needs to provide everything that is required for success.
-                    # Passes the data through to get appropriate error from
-                    # xarray.
-                    self.data[key] = in_data
+                    raise ValueError(' '.join(('Input for {:}'.format(key),
+                                               'does not match expected',
+                                               'dimensions. Value not',
+                                               'set.')))
+            else:
+                # Multidimensional input that is not an xarray.  The user
+                # needs to provide everything that is required for success.
+                # Passes the data through to get appropriate error from
+                # xarray.
+                self.data[key] = in_data
 
-            elif hasattr(key, '__iter__'):
-                # Multiple input strings (keys) are provided, but not in tuple
-                # form. Recurse back into this function, setting each input
-                # individually.
-                for keyname in key:
-                    self.data[keyname] = in_data[keyname]
+        elif hasattr(key, '__iter__'):
+            # Multiple input strings (keys) are provided, but not in tuple
+            # form. Recurse back into this function, setting each input
+            # individually.
+            for keyname in key:
+                self.data[keyname] = in_data[keyname]
 
         return
 
@@ -1231,18 +1094,15 @@ class Instrument(object):
             else:
                 return True
 
-        if self.pandas_format:
-            return data.empty
+        if len(data.indexes.keys()) > 0:
+            # Check if all of the present keys are empty
+            key_empty = []
+            for key in data.indexes.keys():
+                key_empty.append(len(data.indexes[key]) == 0)
+            return all(key_empty)
         else:
-            if len(data.indexes.keys()) > 0:
-                # Check if all of the present keys are empty
-                key_empty = []
-                for key in data.indexes.keys():
-                    key_empty.append(len(data.indexes[key]) == 0)
-                return all(key_empty)
-            else:
-                # No keys, therefore empty
-                return True
+            # No keys, therefore empty
+            return True
 
     def _index(self, data=None):
         """Retrieve the time index for the loaded data.
@@ -1262,16 +1122,13 @@ class Instrument(object):
         if data is None:
             data = self.data
 
-        if self.pandas_format:
-            index = data.index
-        else:
-            epoch_names = self._get_epoch_name_from_data(data=data)
+        epoch_names = self._get_epoch_name_from_data(data=data)
 
-            if len(epoch_names) == 0:
-                index = pds.Index([])
-            else:
-                # Xarray preferred epoch name order is opposite
-                index = data.indexes[epoch_names[-1]]
+        if len(epoch_names) == 0:
+            index = pds.Index([])
+        else:
+            # Xarray preferred epoch name order is opposite
+            index = data.indexes[epoch_names[-1]]
 
         return index
 
@@ -1304,7 +1161,7 @@ class Instrument(object):
         functions
             load, list_files, download, and list_remote_files, concat_data
         attributes
-            directory_format, file_format, multi_file_day, and pandas_format
+            directory_format, file_format, and multi_file_day
         test attributes
             _test_download, _test_download_ci, _new_tests, and _password_req
 
@@ -1315,7 +1172,7 @@ class Instrument(object):
         inst_funcs = {'required': ['load', 'list_files', 'download'],
                       'optional': ['list_remote_files']}
         inst_attrs = {'directory_format': None, 'file_format': None,
-                      'multi_file_day': False, 'pandas_format': True}
+                      'multi_file_day': False}
         test_attrs = {'_test_download': True, '_test_download_ci': True,
                       '_new_tests': True, '_password_req': False}
 
@@ -1540,6 +1397,11 @@ class Instrument(object):
                                        inst_id=self.inst_id)
 
         # Check that data are the data types we expect
+        if not isinstance(data, self._data_library) and hasattr(
+                data, 'to_xarray'):
+            # If possible, try to convert to xarray
+            data = data.to_xarray()
+
         if not isinstance(data, self._data_library):
             raise TypeError(' '.join(('Data returned by instrument load',
                                       'routine must be a',
@@ -1547,8 +1409,7 @@ class Instrument(object):
                                       'and not', repr(type(data)))))
 
         # Let user know whether or not data was returned
-        ind = data.index if self.pandas_format else data.indexes
-        if len(ind) > 0:
+        if len(data.indexes) > 0:
             if date is not None:
                 output_str = ' '.join(('Returning', output_str, 'data for',
                                        date.strftime('%d %B %Y')))
@@ -2109,47 +1970,14 @@ class Instrument(object):
         return self._index()
 
     @property
-    def pandas_format(self):
-        """Boolean flag for pandas data support."""
-        return self._pandas_format
-
-    @pandas_format.setter
-    def pandas_format(self, new_value):
-        # Set pandas_format attribute, see property docstring for details.
-        # Note that `pandas_format` is assigned by default by `_assign_attrs()`.
-        if self.empty:
-            if new_value:
-                self._null_data = pds.DataFrame(None)
-                self._data_library = pds.DataFrame
-            else:
-                self._null_data = xr.Dataset(None)
-                self._data_library = xr.Dataset
-
-            self._pandas_format = new_value
-        else:
-            estr = ''.join(["Can't change data type setting while data is ",
-                            'assigned to Instrument object.'])
-            raise ValueError(estr)
-
-        return
-
-    @property
     def variables(self):
         """List of variables for the loaded data."""
-
-        if self.pandas_format:
-            return self.data.columns
-        else:
-            return list(self.data.variables.keys())
+        return list(self.data.variables.keys())
 
     @property
     def vars_no_time(self):
         """List of variables for the loaded data, excluding time index."""
-
-        if self.pandas_format:
-            return self.data.columns
-        else:
-            return gdm.utils.io.xarray_vars_no_time(self.data)
+        return gdm.utils.io.xarray_vars_no_time(self.data)
 
     def copy(self):
         """Create a deep copy of the entire Instrument object.
@@ -2191,11 +2019,11 @@ class Instrument(object):
         return inst_copy
 
     def concat_data(self, new_data, prepend=False, include=None, **kwargs):
-        """Concatonate data to self.data for xarray or pandas as needed.
+        """Concatonate data to self.data.
 
         Parameters
         ----------
-        new_data : pandas.DataFrame, xarray.Dataset, or list of such objects
+        new_data : xarray.Dataset or list-like of such objects
             New data objects to be concatonated
         prepend : bool
             If True, assign new data before existing data; if False append new
@@ -2208,12 +2036,7 @@ class Instrument(object):
 
         Notes
         -----
-        For pandas, sort=False is passed along to the underlying
-        `pandas.concat` method. If sort is supplied as a keyword, the
-        user provided value is used instead.  Recall that sort orders the
-        data columns, not the data values or the index.
-
-        For xarray, `dim=Instrument.index.name` is passed along to xarray.concat
+        `dim=Instrument.index.name` is passed along to xarray.concat
         except if the user includes a value for dim as a keyword argument.
 
         Examples
@@ -2243,35 +2066,25 @@ class Instrument(object):
 
         if self._concat_data_rtn.__name__.find('_pass_method') == 0:
             # There is no custom concat function, use the gdm standard method.
-            # Start by retrieving the appropriate concatenation function
-            if self.pandas_format:
-                # Specifically do not sort unless otherwise specified
-                if 'sort' not in kwargs:
-                    kwargs['sort'] = False
-                concat_func = pds.concat
-            else:
-                # Ensure the dimensions are equal
-                equal_dims = True
-                idat = 0
-                while idat < len(new_data) - 1 and equal_dims:
-                    if new_data[idat].sizes != new_data[idat + 1].sizes:
-                        equal_dims = False
-                    idat += 1
+            # Start by ensuring the dimensions are equal
+            equal_dims = True
+            idat = 0
+            while idat < len(new_data) - 1 and equal_dims:
+                if new_data[idat].sizes != new_data[idat + 1].sizes:
+                    equal_dims = False
+                idat += 1
 
-                if not equal_dims:
-                    # Update the dimensions, padding data where necessary
-                    new_data = gdm.utils.coords.expand_xarray_dims(
-                        new_data, exclude_dims=[self.index.name])
+            if not equal_dims:
+                # Update the dimensions, padding data where necessary
+                new_data = gdm.utils.coords.expand_xarray_dims(
+                    new_data, exclude_dims=[self.index.name])
 
-                # Specify the dimension, if not otherwise specified
-                if 'dim' not in kwargs:
-                    kwargs['dim'] = self.index.name
-
-                # Set the concat function
-                concat_func = xr.concat
+            # Specify the dimension, if not otherwise specified
+            if 'dim' not in kwargs:
+                kwargs['dim'] = self.index.name
 
             # Assign the concatenated data to the instrument
-            self.data = concat_func(new_data, **kwargs)
+            self.data = xr.concat(new_data, **kwargs)
         else:
             self._concat_data_rtn(new_data, **kwargs)
 
@@ -2401,10 +2214,7 @@ class Instrument(object):
 
         if len(good_names) > 0:
             # Drop the Instrument data using the appropriate methods
-            if self.pandas_format:
-                self.data = self.data.drop(columns=good_names)
-            else:
-                self.data = self.data.drop_vars(good_names)
+            self.data = self.data.drop_vars(good_names)
 
         if len(good_names) < len(names):
             if len(good_names) == 0:
@@ -2653,8 +2463,7 @@ class Instrument(object):
 
         """
 
-        # Mirror xarray/pandas behaviour and raise a ValueError if mapper is
-        # a dict an an unknown variable name is provided.
+        # Raise a ValueError if mapper is a dict with an unknown variable name
         if isinstance(mapper, dict):
             for vkey in mapper.keys():
                 if vkey not in self.variables:
@@ -2662,39 +2471,19 @@ class Instrument(object):
                                               ' because it is not a variable ',
                                               'in this Instrument']))
 
-        if self.pandas_format:
-            # Initialize dict for renaming normal pandas data
-            pdict = {}
+        # Adjust mapper to account for lowercase data labels in Instrument
+        # data. Xarray requires dict input for rename.
+        gdict = {}
+        for vkey in self.variables:
+            map_key = gdm.utils.get_mapped_value(vkey, mapper)
+            if map_key is not None:
+                if lowercase_data_labels:
+                    gdict[vkey] = map_key.lower()
+                else:
+                    gdict[vkey] = map_key
 
-            # Collect and rename variables
-            for vkey in self.variables:
-                map_key = gdm.utils.get_mapped_value(vkey, mapper)
-
-                if map_key is not None:
-                    # Add to the pandas renaming dictionary after accounting
-                    # for the `lowercase_data_labels` flag.
-                    if lowercase_data_labels:
-                        if vkey != map_key.lower():
-                            pdict[vkey] = map_key.lower()
-                    else:
-                        pdict[vkey] = map_key
-
-            # Change variable names for attached data object
-            self.data.rename(columns=pdict, inplace=True)
-        else:
-            # Adjust mapper to account for lowercase data labels in Instrument
-            # data. Xarray requires dict input for rename.
-            gdict = {}
-            for vkey in self.variables:
-                map_key = gdm.utils.get_mapped_value(vkey, mapper)
-                if map_key is not None:
-                    if lowercase_data_labels:
-                        gdict[vkey] = map_key.lower()
-                    else:
-                        gdict[vkey] = map_key
-
-            # Rename data variables using native xarray rename method
-            self.data = self.data.rename(gdict)
+        # Rename data variables using native xarray rename method
+        self.data = self.data.rename(gdict)
 
         return
 
@@ -2973,12 +2762,8 @@ class Instrument(object):
                     self._next_data = self._load_next(load_kwargs=kwargs)
 
             # Make sure datetime indices for all data is monotonic
-            if self.pandas_format:
-                sort_method = "sort_index"
-                sort_args = []
-            else:
-                sort_method = 'sortby'
-                sort_args = ['time']
+            sort_method = 'sortby'
+            sort_args = ['time']
 
             if not self._index(self._prev_data).is_monotonic_increasing:
                 self._prev_data = getattr(self._prev_data,
@@ -3035,8 +2820,7 @@ class Instrument(object):
             cdata = list()
             include = None
             if not self._empty(self._prev_data) and not self.empty:
-                # __getitem__ is used to handle any pandas/xarray differences in
-                # data slicing
+                # __getitem__ is used to handle data slicing
                 pdata = self.__getitem__(slice(first_pad, self.index[0]),
                                          data=self._prev_data)
                 if not self._empty(pdata):
@@ -3049,8 +2833,7 @@ class Instrument(object):
                         include = 1
 
             if not self._empty(self._next_data) and not self.empty:
-                # __getitem__ is used to handle any pandas/xarray differences in
-                # data slicing
+                # __getitem__ is used to handle data slicing
                 ndata = self.__getitem__(slice(self.index[-1], last_pad),
                                          data=self._next_data)
                 if not self._empty(ndata):

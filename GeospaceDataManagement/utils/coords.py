@@ -192,10 +192,7 @@ def calc_solar_local_time(inst, lon_name=None, slt_name='slt',
         max_val = np.inf
 
     # Add the solar local time to the instrument
-    if inst.pandas_format:
-        inst[slt_name] = pds.Series(slt, index=inst.index)
-    else:
-        inst.data = inst.data.assign({slt_name: (coords, slt.data)})
+    inst.data = inst.data.assign({slt_name: (coords, slt.data)})
 
     # Add units to the metadata TODO
     # inst.meta[slt_name] = {inst.meta.labels.units: 'h',

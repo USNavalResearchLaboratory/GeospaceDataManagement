@@ -473,13 +473,9 @@ class InstLibTests(object):
 
         # Check the empty status
         assert self.test_inst.empty, "Data was loaded for a far-future time"
-        if self.test_inst.pandas_format:
-            assert all(self.test_inst.data == pds.DataFrame()), "Data not empty"
-        else:
-            assert self.test_inst.data.dims == xr.Dataset().dims, \
-                "Dims not empty"
-            assert self.test_inst.data.data_vars == xr.Dataset().data_vars, \
-                "Data variables not empty"
+        assert self.test_inst.data.dims == xr.Dataset().dims, "Dims not empty"
+        assert (self.test_inst.data.data_vars
+                == xr.Dataset().data_vars), "Data variables not empty"
 
         return
 

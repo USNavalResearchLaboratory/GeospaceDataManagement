@@ -455,11 +455,14 @@ class InstPropertyTests(object):
         # Ensure the desired data variable is present and delete all others
         # 4-6 variables are needed to test all lines; choose the lesser limit
         nvar = 4
-        self.testInst.data = self.testInst.data[self.testInst.variables[:nvar]]
+        self.testInst.data = self.testInst.data[
+            self.testInst.vars_no_time[:nvar]]
 
-        # Test output with one data variable
+        # Test output with less variables, time will always be present even
+        # if it is not in the selection list
         self.out = self.testInst.__str__()
-        assert self.out.find('Number of variables: 4') > 0
+        assert self.out.find('Number of variables: {:d}'.format(
+            nvar + 1)) > 0, self.out
         assert self.out.find('Variable Names') > 0
         for n in range(nvar):
             assert self.out.find(self.testInst.variables[n]) > 0
@@ -724,44 +727,5 @@ class InstPropertyTests(object):
 
         # Make sure isntrument loaded as inst_module
         assert tinst.inst_module == self.testInst.inst_module
-
-    def test_change_inst_pandas_format(self):
-        """Test changing `pandas_format` attribute works."""
-        new_format = not self.testInst.pandas_format
-        new_type = pds.DataFrame if new_format else xr.Dataset
-
-        # Save current data format hidden attributes
-        current_null = self.testInst._null_data
-        current_library = self.testInst._data_library
-
-        # Assign inverted `pandas_format` setting
-        self.testInst.pandas_format = new_format
-
-        # Confirm assignment of visible and hidden attributes
-        assert self.testInst.pandas_format == new_format
-        assert not isinstance(self.testInst._null_data, type(current_null))
-        assert current_library != self.testInst._data_library
-
-        # Confirm internal consistency
-        assert isinstance(self.testInst._null_data, self.testInst._data_library)
-        assert isinstance(self.testInst._null_data, new_type)
-
-        return
-
-    def test_change_inst_pandas_format_loaded_data(self):
-        """Test changing `pandas_format` attribute when data loaded."""
-
-        # Load data
-        self.testInst.load(date=self.ref_time)
-
-        # Get inverted pandas_format setting
-        new_format = not self.testInst.pandas_format
-
-        # Assign inverted `pandas_format` setting
-        with pytest.raises(ValueError) as err:
-            self.testInst.pandas_format = new_format
-
-        estr = "Can't change data type setting while data is "
-        assert str(err).find(estr) > 0
 
         return

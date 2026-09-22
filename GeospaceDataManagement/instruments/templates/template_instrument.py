@@ -75,10 +75,6 @@ tags = {'': 'description 1',  # this is the default
 # inst_ids = {'a': ['tag1', 'tag2'], 'b': ['tag2', 'tag3']}
 inst_ids = {'': ['', 'tag_string']}
 
-# Set to False to specify using xarray (not using pandas)
-# Set to True if data will be returned via a pandas DataFrame
-pandas_format = False
-
 # The following attributes will be set to these default values upon
 # instantiation if not otherwise specified
 directory_format = None
@@ -318,8 +314,9 @@ def load(fnames, tag='', inst_id='', custom_keyword=None):
 
     Returns
     -------
-    data : pds.DataFrame or xr.Dataset
-        Data to be assigned to the gdm.Instrument.data object.
+    data : xr.Dataset or pds.DataFrame
+        Data to be assigned to the gdm.Instrument.data object, which will
+        convert any pandas data to an xr.Dataset
 
     Notes
     -----
@@ -340,7 +337,6 @@ def load(fnames, tag='', inst_id='', custom_keyword=None):
         inst.load(2019, 1)
 
     """
-
     # netCDF4 files, particularly those produced by GeospaceDataManagement can
     # be loaded using a GeospaceDataManagement provided function, load_netcdf4.
     data = gdm.utils.load_netcdf4(fnames, epoch_name='Epoch',
@@ -353,8 +349,7 @@ def load(fnames, tag='', inst_id='', custom_keyword=None):
                                           'scale': ('ScaleTyp', str),
                                           'min_val': ('ValidMin', float),
                                           'max_val': ('ValidMax', float),
-                                          'fill_val': ('FillVal', float)},
-                                  pandas_format=pandas_format)
+                                          'fill_val': ('FillVal', float)})
     return data
 
 

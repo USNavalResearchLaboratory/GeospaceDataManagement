@@ -631,10 +631,7 @@ def update_fill_values(inst, variables=None, new_fill_val=np.nan):
                 # Update the variable data
                 # Depends upon data dimensionality
                 if len(ifill) > 0:
-                    if inst.pandas_format:
-                        ifill = ifill[0]
-                        inst[ifill, var] = new_fill_val
-                    elif len(inst[var].dims) == 1:
+                    if len(inst[var].dims) == 1:
                         ifill = ifill[0]
                         inst[ifill, var] = new_fill_val
                     else:
