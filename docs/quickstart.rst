@@ -59,16 +59,16 @@ Load an Instrument
 The best way to see if :py:mod:`GeospaceDataManagement` is working is to load a
 test instrument. The test instrument will simulate data when it is asked to load
 data. Loading a day of data will ensure there is no problem with the underlying
-pandas and xarray installations.
+installations.
 
 .. code:: python
 
-    # Testing out the pandas installation
+    # Testing out the 1D data in xarray
     inst = GeospaceDataManagement.Instrument('gdm', 'testing')
     inst.load(2009, 1)
     print(inst.data)
 
-    # Testing out the xarray installation
+    # Testing out the ND data in xarray
     inst = GeospaceDataManagement.Instrument('gdm', 'ndtesting')
     inst.load(2009, 1)
     print(inst.data)

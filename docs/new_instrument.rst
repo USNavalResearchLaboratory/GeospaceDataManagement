@@ -411,7 +411,7 @@ The load module method signature should appear as:
 .. code:: python
 
    def load(fnames, tag='', inst_id=''):
-       return data, meta
+       return data
 
 - :py:data:`fnames` contains a list of filenames with the complete data path
   that :py:mod:`GeospaceDataManagement` expects the routine to load data for.
@@ -423,23 +423,12 @@ The load module method signature should appear as:
 - :py:data:`tag` and :py:data:`inst_id` are always available as inputs, as they
   commmonly specify the data set to be loaded
 - The :py:func:`load` routine should return :py:attr:`data`. If there is no data
-  to load, :py:attr:`data` should return an empty
-  :py:class:`pandas.DataFrame` or :py:class:`xarray.Dataset`.
-- For simple time-series data sets, :py:attr:`data` is a
-  :py:class:`pandas.DataFrame`, column names are the data labels, rows are
-  indexed by :py:class:`datetime.datetime` objects.
-- For multi-dimensional data, :py:attr:`data` can be set to an
-  :py:class:`xarray.Dataset` instead. When returning xarray data, a variable
-  at the top-level of the instrument module must be set:
-
-.. code:: python
-
-   pandas_format = False
-
-- The :py:class:`pandas.DataFrame` or :py:class:`xarray.Dataset` needs to be
-  indexed with :py:class:`datetime.datetime` objects. This index needs to be
-  named either :py:data:`Epoch` for :py:class:`pandas.DataFrame` and
-  :py:data:`time` for :py:class:`xarray.Dataset`.
+  to load, :py:attr:`data` should return an empty :py:class:`xarray.Dataset`.
+  Meta data is handled natively in xarray, and should be loaded to each
+  :py:class:`xarray.Dataset` variable.
+- The :py:class:`xarray.Dataset` needs to be indexed with
+  :py:class:`datetime.datetime` objects. This index needs to be named either
+  :py:data:`epoch` or :py:data:`time` (not case sensitive).
 - :py:func:`GeospaceDataManagement.utils.create_datetime_index` provides quick
   generation of an appropriate datetime index for irregularly sampled data sets
   with gaps
@@ -506,15 +495,6 @@ This defaults to ``False``, which means that the files for this data set have
 one or less per day.  If your data set consists of multiple files per day, and
 the files contain data across daybreaks, this attribute should be set to
 ``True``.
-
-pandas_format
-^^^^^^^^^^^^^
-
-This defaults to ``True`` and assumes the data are organized as a time series,
-allowing them to be stored as a :py:class:`pandas.DataFrame`. Setting this
-attribute to ``False`` tells :py:mod:`GeospaceDataManagement` that the data will be stored in an
-:py:class:`xarray.Dataset`.
-
 
 .. _rst_new_inst-optrout:
 
@@ -690,11 +670,11 @@ All modules defined in the ``__init__.py`` for
 of the required routines, additional information is required by
 :py:mod:`GeospaceDataManagement`.
 
-Below is example code from the :py:mod:`pysatMadrigal` Instrument module,
-dmsp_ivm.py. The attributes are set at the top level simply by defining
-variable names with the proper info. The various satellites within DMSP, F11,
-F12, F13 are separated out using the inst_id parameter. 'utd' is used as a tag
-to delineate that the data contains the UTD developed quality flags.
+Below is example code from the Madrigal Instrument module, dmsp_ivm.py.
+The attributes are set at the top level simply by defining variable names with
+the proper info. The various satellites within DMSP, F11, F12, F13 are separated
+out using the inst_id parameter. 'utd' is used as a tag to delineate that the
+data contains the UTD developed quality flags.
 
 .. code:: python
 

@@ -104,6 +104,15 @@ Files
   :members:
 
 
+.. _api-utils-meta:
+
+Meta
+^^^^
+
+.. automodule:: GeospaceDataManagement.utils.meta
+  :members:
+
+
 .. _api-gdm-registry:
 
 Registry
