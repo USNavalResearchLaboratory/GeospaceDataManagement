@@ -91,14 +91,16 @@ def clean(self):
 
 
 def preprocess(self):
-    """Extract Instrument attrs from file attrs loaded to `Meta.header`."""
+    """Extract Instrument attrs from file attrs loaded as high level meta data.
 
-    if hasattr(self.meta, "header"):
+    """
+
+    if len(self.data.attrs) > 0:
         for iattr in ['platform', 'name', 'tag', 'inst_id', 'acknowledgements',
                       'references']:
-            if hasattr(self.meta.header, iattr):
-                setattr(self, iattr, getattr(self.meta.header, iattr))
-
+            if iattr in self.data.attrs.keys():
+                setattr(self, iattr, self.data.attrs[iattr])
+                del self.data.attrs[iattr]
     return
 
 
@@ -136,11 +138,9 @@ def download(date_array, tag, inst_id, data_path=None):
     return
 
 
-def load(fnames, tag='', inst_id='', strict_meta=False, file_format='NETCDF4',
-         epoch_name=None, epoch_unit='ms', epoch_origin='unix',
-         decode_timedelta=False, meta_kwargs=None,
-         meta_processor=None, meta_translation=None,
-         drop_meta_labels=None, decode_times=None):
+def load(fnames, tag='', inst_id='', file_format='NETCDF4', epoch_name='time',
+         epoch_unit='ms', epoch_origin='unix', decode_timedelta=False,
+         decode_times=None):
     """Load locally-created NetCDF data.
 
     Parameters
@@ -154,9 +154,6 @@ def load(fnames, tag='', inst_id='', strict_meta=False, file_format='NETCDF4',
     inst_id : str
         Instrument ID used to identify particular data set to be loaded.
         This input is nominally provided by GeospaceDataManagement. (default='')
-    strict_meta : bool
-        Flag that checks if metadata across fnames is the same if True
-        (default=False)
     file_format : str
         file_format keyword passed to netCDF4 routine.  Expects one of
         'NETCDF3_CLASSIC', 'NETCDF3_64BIT', 'NETCDF4_CLASSIC', or 'NETCDF4'.
@@ -182,25 +179,6 @@ def load(fnames, tag='', inst_id='', strict_meta=False, file_format='NETCDF4',
     decode_timedelta : bool
         If True, variables with unit attributes that  are 'timelike' ('hours',
         'minutes', etc) are converted to `np.timedelta64`. (default=False)
-    meta_kwargs : dict or NoneType
-        Dict to specify custom Meta initialization or None to use Meta
-        defaults (default=None)
-    meta_processor : function or NoneType
-        If not None, a dict containing all of the loaded metadata will be
-        passed to `meta_processor` which should return a filtered version
-        of the input dict. The returned dict is loaded into a pysat.Meta
-        instance and returned as `meta`. (default=None)
-    meta_translation : dict or NoneType
-        Translation table used to map metadata labels in the file to
-        those used by the returned `meta`. Keys are labels from file
-        and values are labels in `meta`. Redundant file labels may be
-        mapped to a single pysat label. If None, will use
-        `default_from_netcdf_translation_table`. This feature
-        is maintained for file compatibility. To disable all translation,
-        input an empty dict. (default=None)
-    drop_meta_labels : list or NoneType
-        List of variable metadata labels that should be dropped. Applied
-        to metadata as loaded from the file. (default=None)
     decode_times : bool or NoneType
         If True, variables with unit attributes that are 'timelike' ('hours',
         'minutes', etc) are converted to `np.timedelta64` by xarray. If False,
@@ -216,16 +194,10 @@ def load(fnames, tag='', inst_id='', strict_meta=False, file_format='NETCDF4',
     """
     # netCDF4 files, particularly those produced by pysat can be loaded using a
     # pysat provided function, load_netcdf4.
-    data = gdm.utils.io.load_netcdf(fnames, strict_meta=strict_meta,
-                                    file_format=file_format,
-                                    epoch_name=epoch_name,
+    data = gdm.utils.io.load_netcdf(fnames, file_format=file_format,
                                     epoch_unit=epoch_unit,
                                     epoch_origin=epoch_origin,
                                     decode_timedelta=decode_timedelta,
-                                    meta_kwargs=meta_kwargs,
-                                    meta_processor=meta_processor,
-                                    meta_translation=meta_translation,
-                                    drop_meta_labels=drop_meta_labels,
                                     decode_times=decode_times)
 
     return data

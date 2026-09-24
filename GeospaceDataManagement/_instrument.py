@@ -1068,9 +1068,9 @@ class Instrument(object):
             data = self.data
 
         if hasattr(data, 'indexes'):
-            for ename in ['Epoch', 'time']:
-                if ename in data.indexes:
-                    epoch_names.append(ename)
+            for ind_name in data.indexes:
+                if ind_name.lower() in ['epoch', 'time']:
+                    epoch_names.append(ind_name)
 
         return epoch_names
 
@@ -1151,7 +1151,7 @@ class Instrument(object):
         """
         # Initialize the output
         label_list = list()
-        
+
         # Support easy application to `self.data`
         if data is None:
             if hasattr(self, 'data'):
@@ -2024,7 +2024,8 @@ class Instrument(object):
     @property
     def vars_no_time(self):
         """List of variables for the loaded data, excluding time index."""
-        return gdm.utils.io.xarray_vars_no_time(self.data)
+        return gdm.utils.io.xarray_vars_no_time(self.data,
+                                                time_label=self.index.name)
 
     def copy(self):
         """Create a deep copy of the entire Instrument object.
@@ -2065,7 +2066,8 @@ class Instrument(object):
 
         return inst_copy
 
-    def concat_data(self, new_data, prepend=False, include=None, **kwargs):
+    def concat_data(self, new_data, prepend=False, include=None,
+                    fill_label='fill_val', **kwargs):
         """Concatonate data to self.data.
 
         Parameters
@@ -2078,6 +2080,8 @@ class Instrument(object):
         include : int or NoneType
             Index at which `self.data` should be included in `new_data` or None
             to use `prepend` (default=None)
+        fill_label : str
+            Meta data label for fill values (default='fill_val')
         **kwargs : dict
             Optional keyword arguments passed to pds.concat or xr.concat
 
@@ -2124,7 +2128,8 @@ class Instrument(object):
             if not equal_dims:
                 # Update the dimensions, padding data where necessary
                 new_data = gdm.utils.coords.expand_xarray_dims(
-                    new_data, exclude_dims=[self.index.name])
+                    new_data, exclude_dims=[self.index.name],
+                    fill_label=fill_label)
 
             # Specify the dimension, if not otherwise specified
             if 'dim' not in kwargs:
@@ -3280,8 +3285,8 @@ class Instrument(object):
 
         return
 
-    def to_netcdf4(self, fname, base_instrument=None, epoch_name=None,
-                   zlib=False, complevel=4, shuffle=True, export_nan=None,
+    def to_netcdf4(self, fname, base_instrument=None, unit_label='units',
+                   name_label='name', zlib=False, complevel=4, shuffle=True,
                    export_gdm_info=True, unlimited_time=True, modify=False):
         """Store loaded data into a netCDF4 file.
 
@@ -3293,9 +3298,10 @@ class Instrument(object):
             Class used as a comparison, only attributes that are present with
             self and not on base_instrument are written to netCDF. Using None
             assigns an unmodified gdm.Instrument object. (default=None)
-        epoch_name : str or NoneType
-            Label in file for datetime index of Instrument object
-            (default=None)
+        unit_label : str
+            Meta data label for units (default='units')
+        name_label : str
+            Meta data label for variable name (default='name')
         zlib : bool
             Flag for engaging zlib compression (True - compression on)
             (default=False)
@@ -3306,11 +3312,6 @@ class Instrument(object):
             The HDF5 shuffle filter will be applied before compressing the data.
             This significantly improves compression. Ignored if `zlib=False`.
             (default=True)
-        export_nan : list or NoneType
-             A list supplied here will override other settings, and all
-             parameters included will be written to the file. If not listed
-             and a value is NaN then that attribute simply won't be included in
-             the netCDF4 file. (default=None)
         export_gdm_info : bool
             If True, platform, name, tag, inst_id, acknowledgements, and
             references will be appended to the file as meta data. For some
@@ -3343,9 +3344,9 @@ class Instrument(object):
         # Write the output file
         gdm.utils.io.inst_to_netcdf(inst, fname=fname,
                                     base_instrument=base_instrument,
-                                    epoch_name=epoch_name, zlib=zlib,
+                                    unit_label=unit_label,
+                                    name_label=name_label, zlib=zlib,
                                     complevel=complevel, shuffle=shuffle,
-                                    export_nan=export_nan,
                                     export_gdm_info=export_gdm_info,
                                     unlimited_time=unlimited_time)
 
