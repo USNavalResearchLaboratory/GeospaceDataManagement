@@ -26,7 +26,6 @@ import warnings
 
 import pandas as pds
 import pytest
-import xarray as xr
 
 import GeospaceDataManagement
 from GeospaceDataManagement.instruments.methods import testing as ps_meth

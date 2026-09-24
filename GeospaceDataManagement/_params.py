@@ -17,7 +17,7 @@ import os
 
 from portalocker import Lock
 
-import GeospaceDataManagement.utils as gdm_utils
+from GeospaceDataManagement import utils as gdm_utils
 from GeospaceDataManagement.utils.files import check_and_make_path
 
 

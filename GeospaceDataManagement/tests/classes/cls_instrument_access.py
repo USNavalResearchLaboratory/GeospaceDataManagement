@@ -35,7 +35,6 @@ import numpy as np
 
 import pandas as pds
 import pytest
-import xarray as xr
 
 import GeospaceDataManagement as gdm
 from GeospaceDataManagement.utils import testing

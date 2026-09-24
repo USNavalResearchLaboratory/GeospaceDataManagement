@@ -174,7 +174,8 @@ class TestBasics(object):
         assert GeospaceDataManagement.params['hi_there'] == 'hello there!'
 
         # Get a new parameters instance and verify information is retained
-        # Using eval to ensure all settings with current GeospaceDataManagement.params retained.
+        # Using eval to ensure all settings with current
+        # GeospaceDataManagement.params retained.
         new_params = eval(GeospaceDataManagement.params.__repr__())
         assert new_params['hi_there'] == GeospaceDataManagement.params[
             'hi_there']

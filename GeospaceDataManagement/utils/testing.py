@@ -14,7 +14,7 @@
 """Utilities to perform common testing evaluations."""
 
 import numpy as np
-import GeospaceDataManagement.utils as gdm_utils
+from GeospaceDataManagement import utils as gdm_utils
 
 
 def assert_list_contains(small_list, big_list, test_nan=False, test_case=True):
