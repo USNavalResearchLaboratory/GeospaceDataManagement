@@ -16,7 +16,6 @@ from GeospaceDataManagement.utils._core import listify  # noqa: F401
 from GeospaceDataManagement.utils._core import NetworkLock  # noqa: F401
 from GeospaceDataManagement.utils._core import scale_units  # noqa: F401
 from GeospaceDataManagement.utils._core import stringify  # noqa: F401
-from GeospaceDataManagement.utils._core import update_fill_values  # noqa: F401
 from GeospaceDataManagement.utils import coords  # noqa: F401
 from GeospaceDataManagement.utils import files  # noqa: F401
 from GeospaceDataManagement.utils import io  # noqa: F401

@@ -222,3 +222,68 @@ def get_epoch_metadata(inst, epoch_name, unit_label='units', name_label='name'):
         epoch_dict['MonoTon'] = 'decrease'
 
     return epoch_dict
+
+
+def update_fill_values(inst, variables=None, fill_label='fill_val',
+                       new_fill_val=np.nan):
+    """Update Instrument data so that the fill value is consistent.
+
+    Parameters
+    ----------
+    inst : gdm.Instrument
+        Instrument object with data loaded
+    variables : str, list, or NoneType
+        List of variables to update or None to update all (default=None)
+    fill_label : str
+        Label for meta data specifying the fill value for this data
+        (default='fill_val')
+    new_fill_val : any
+        New fill value to use (default=np.nan)
+
+    Notes
+    -----
+    On Windows OS, this function may not work for data variables that are also
+    xarray coordinates.
+
+    """
+    if not inst.empty:
+        # Get the variables (if needed) and ensure they are list-like
+        if variables is None:
+            variables = list(inst.variables)
+        else:
+            variables = gdm.utils.listify(variables)
+
+        for var in variables:
+            if fill_label in inst[var].attrs.keys():
+                # Get the old fill value
+                old_fill_val = inst[var].attrs[fill_label]
+
+            # Update the meta data
+            inst[var].attrs[fill_label] = new_fill_val
+
+            try:
+                if np.isnan(old_fill_val):
+                    # Needed for NaNs
+                    ifill = np.where(np.isnan(inst[var].values))
+                else:
+                    # Catches numbers that fail gracefully from NaN check
+                    ifill = np.where(inst[var].values == old_fill_val)
+            except TypeError:
+                # This catches strings and objects
+                ifill = np.where(inst[var].values == old_fill_val)
+
+            # Update the variable data
+            # Depends upon data dimensionality
+            if len(ifill) > 0:
+                if len(inst[var].dims) == 1:
+                    ifill = ifill[0]
+                    inst[ifill, var] = new_fill_val
+                else:
+                    # Multidimensional xarray
+                    #
+                    # Remember that inst[*ifill, var] = new_fill_val
+                    # works, but takes forever. This could be an Instrument
+                    # level issue
+                    inst[var].values[ifill] = new_fill_val
+
+    return
