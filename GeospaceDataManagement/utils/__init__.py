@@ -20,6 +20,7 @@ from GeospaceDataManagement.utils._core import update_fill_values  # noqa: F401
 from GeospaceDataManagement.utils import coords  # noqa: F401
 from GeospaceDataManagement.utils import files  # noqa: F401
 from GeospaceDataManagement.utils import io  # noqa: F401
+from GeospaceDataManagement.utils import meta  # noqa: F401
 from GeospaceDataManagement.utils import registry  # noqa: F401
 from GeospaceDataManagement.utils import testing  # noqa: F401
 from GeospaceDataManagement.utils import time  # noqa: F401
