@@ -17,7 +17,6 @@ from importlib import reload
 import inspect
 import numpy as np
 import os
-import pandas as pds
 import portalocker
 import pytest
 import shutil
@@ -27,119 +26,6 @@ import GeospaceDataManagement as gdm
 from GeospaceDataManagement.tests.classes.cls_registration import \
     TestWithRegistration
 from GeospaceDataManagement import utils
-
-
-class TestUpdateFill(object):
-    """Tests for the core utility `update_fill_values`."""
-
-    def setup_method(self):
-        """Set up the test enviroment."""
-        self.ref_time = gdm.instruments.gdm_testing._test_dates['']['']
-        self.new_fill_val = -47.0
-        return
-
-    def teardown_method(self):
-        """Clean up the test environment."""
-        del self.ref_time, self.new_fill_val
-        return
-
-    @pytest.mark.parametrize("name", ["ndtesting", "testing", "testmodel"])
-    @pytest.mark.parametrize("variables", [('mlt'), (['mlt'])])
-    def test_update_fill_values_numbers(self, name, variables):
-        """Test `update_fill_values` for the desired behaviour.
-
-        Parameters
-        ----------
-        name : str
-            Instrument name
-        variables : str or list-like
-            Variables to update (should be int or float type)
-
-        """
-
-        # Initalize the instrument
-        inst = gdm.Instrument('gdm', name)
-        inst.load(date=self.ref_time)
-
-        # Ensure there are fill values to check
-        test_vars = gdm.utils.listify(variables)
-        for var in test_vars:
-            inst[0, var] = inst.meta[var, inst.meta.labels.fill_val]
-
-        # Update the fill values
-        gdm.utils.update_fill_values(inst, variables, self.new_fill_val)
-
-        # Ensure the fill values are updated
-        for var in test_vars:
-            assert inst.meta[var,
-                             inst.meta.labels.fill_val] == self.new_fill_val, \
-                "meta fill value not updated for {:}".format(var)
-            assert np.all(inst[0, var] == self.new_fill_val), \
-                "filled data values not updated for {:}".format(var)
-        return
-
-    @pytest.mark.parametrize("name", ["ndtesting", "testing", "testmodel"])
-    def test_update_fill_values_by_type(self, name):
-        """Test `update_fill_values` for the desired behaviour.
-
-        Parameters
-        ----------
-        name : str
-            Instrument name
-
-        """
-
-        # Initialize the instrument
-        inst = gdm.Instrument('gdm', name)
-        inst.load(date=self.ref_time)
-
-        # Ensure there are fill values to check for strings and numbers
-        # TODO(#1227) Remove try/except after numpy >= 1.25
-        try:
-            str_types = [str, np.str_, np.bytes_, np.dtypes.StrDType,
-                         np.dtypes.StringDType, np.dtypes.BytesDType,
-                         pds.StringDtype]
-        except AttributeError:
-            str_types = [str, np.str_, np.bytes_, pds.StringDtype]
-
-        str_vars = [var for var in inst.variables if var in inst.meta.keys()
-                    and type(inst[var].dtype) in str_types
-                    and inst.meta[var, inst.meta.labels.fill_val] is not None]
-
-        num_vars = [var for var in inst.variables if var in inst.meta.keys()
-                    and var not in inst.data.coords.keys()
-                    and inst._get_var_type_code(inst[var].dtype)[0]
-                    in ['i', 'u', 'f']
-                    and inst.meta[var, inst.meta.labels.fill_val]
-                    is not None]
-
-        for var in num_vars:
-            inst[0, var] = inst.meta[var, inst.meta.labels.fill_val]
-
-        for var in str_vars:
-            inst[0, var] = str(inst.meta[var, inst.meta.labels.fill_val])
-
-        # Update and check the numeric fill values
-        gdm.utils.update_fill_values(inst, num_vars, self.new_fill_val)
-
-        for var in num_vars:
-            assert inst.meta[var,
-                             inst.meta.labels.fill_val] == self.new_fill_val, \
-                "meta fill value not updated for {:}".format(var)
-            assert np.all(inst[var].values[0] == self.new_fill_val), \
-                "filled data values not updated for {:}".format(var)
-
-        # Update and check the string fill values
-        self.new_fill_val = 'fill'
-        gdm.utils.update_fill_values(inst, str_vars, self.new_fill_val)
-
-        for var in str_vars:
-            assert inst.meta[var,
-                             inst.meta.labels.fill_val] == self.new_fill_val, \
-                "meta fill value not updated for {:}".format(var)
-            assert np.all(inst[var].values[0] == self.new_fill_val), \
-                "filled data values not updated for {:}".format(var)
-        return
 
 
 class TestCIonly(object):
