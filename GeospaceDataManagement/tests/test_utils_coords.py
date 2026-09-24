@@ -20,6 +20,7 @@ import pytest
 
 import GeospaceDataManagement as gdm
 from GeospaceDataManagement.utils import coords
+from GeospaceDataManagement.utils.meta import default_fill_values_from_type
 from GeospaceDataManagement.utils import testing
 
 
@@ -139,8 +140,7 @@ class TestCalcSLT(object):
         """Test SLT calculation with longitudes from 0-360 deg for 0 UTH."""
 
         # Instantiate instrument and load data
-        self.inst = gdm.Instrument(platform='gdm', name=name,
-                                      num_samples=1)
+        self.inst = gdm.Instrument(platform='gdm', name=name, num_samples=1)
         self.inst.load(date=self.inst_time)
 
         coords.calc_solar_local_time(self.inst, lon_name="longitude",
@@ -163,8 +163,7 @@ class TestCalcSLT(object):
         """Test that ref_date only works when apply_modulus=False."""
 
         # Instantiate instrument and load data
-        self.inst = gdm.Instrument(platform='gdm', name=name,
-                                      num_samples=1)
+        self.inst = gdm.Instrument(platform='gdm', name=name, num_samples=1)
         self.inst.load(date=self.inst_time)
 
         # Apply solar local time method and capture logging output
@@ -208,7 +207,7 @@ class TestCalcSLT(object):
         testing.eval_bad_input(coords.calc_solar_local_time, ValueError,
                                "unknown longitude variable name",
                                [self.inst], {"lon_name": "not longitude",
-                                                "slt_name": 'slt'})
+                                             "slt_name": 'slt'})
 
         return
 
@@ -234,7 +233,7 @@ class TestCalcSLT(object):
         # Instantiate instrument and load data
         self.inst = gdm.Instrument(platform='gdm', name=name)
         self.inst.load(date=self.inst_time,
-                          end_date=self.inst_time + dt.timedelta(days=2))
+                       end_date=self.inst_time + dt.timedelta(days=2))
         coords.calc_solar_local_time(self.inst, lon_name="longitude",
                                      slt_name='slt', apply_modulus=False)
 
@@ -251,11 +250,11 @@ class TestCalcSLT(object):
         # Instantiate instrument and load data
         self.inst = gdm.Instrument(platform='gdm', name=name)
         self.inst.load(date=self.inst_time, end_date=self.inst_time
-                          + dt.timedelta(days=2))
+                       + dt.timedelta(days=2))
         coords.calc_solar_local_time(self.inst, lon_name="longitude",
                                      slt_name='slt', apply_modulus=False,
                                      ref_date=self.inst_time
-                                              - dt.timedelta(days=1))
+                                     - dt.timedelta(days=1))
 
         # Test the output range
         assert self.inst['slt'].max() > 72.0
@@ -377,12 +376,11 @@ class TestExpandXarrayDims(object):
         self.start_time = gdm.instruments.gdm_ndtesting._test_dates['']['']
         self.data_list = []
         self.out = None
-        self.meta = None
         return
 
     def teardown_method(self):
         """Clean up the unit test environment."""
-        del self.test_inst, self.start_time, self.data_list, self.meta, self.out
+        del self.test_inst, self.start_time, self.data_list, self.out
         return
 
     def set_data_meta(self, dims_equal):
@@ -399,7 +397,6 @@ class TestExpandXarrayDims(object):
 
         self.test_inst.load(date=self.start_time)
         self.data_list.append(self.test_inst.data)
-        # TODO self.meta = self.test_inst.meta
 
         # The second data set should have half the time samples
         num_samples = int(self.test_inst.index.shape[0] / 2)
@@ -420,7 +417,7 @@ class TestExpandXarrayDims(object):
 
         return
 
-    def eval_dims(self, dims_equal, exclude_dims=None, default_fill_val=None):
+    def eval_dims(self, dims_equal, exclude_dims=None):
         """Set the input data list and meta data.
 
         Parameters
@@ -433,9 +430,6 @@ class TestExpandXarrayDims(object):
             A list of dimensions that have the same name, but can have different
             values or None if all the dimensions with the same name should
             have the same shape. (default=None)
-        default_fill_val : any
-            The expected fill value for data variables not present in self.meta
-            (default=None)
 
         """
         if exclude_dims is None:
@@ -469,31 +463,30 @@ class TestExpandXarrayDims(object):
                             # This data set is smaller, test for fill values
                             for dvar in xdata.data_vars.keys():
                                 if tdim in xdata[dvar].dims:
-                                    # if dvar in self.meta:
-                                    #     fill_val = self.meta[
-                                    #         dvar, self.meta.labels.fill_val]
-                                    # else:
-                                    #    fill_val = default_fill_val
-
+                                    if 'fill_val' in xdata[dvar].attrs:
+                                        fval = xdata[dvar].attrs['fill_val']
+                                    else:
+                                        fval = default_fill_values_from_type(
+                                            xdata[dvar].dtype.type)
                                     try:
-                                        if np.isnan(fill_val):
+                                        if np.isnan(fval):
                                             assert np.isnan(
                                                 xdata[dvar].values).any()
                                         else:
                                             assert np.any(xdata[dvar].values
-                                                          == fill_val)
+                                                          == fval)
                                     except TypeError:
                                         # This is a string or object
                                         estr = "".join([
                                             "Bad or missing fill values for ",
                                             dvar, ": ({:} not in {:})".format(
-                                                fill_val, xdata[dvar].values)])
-                                        if fill_val is None:
-                                            assert fill_val in xdata[
+                                                fval, xdata[dvar].values)])
+                                        if fval is None:
+                                            assert fval in xdata[
                                                 dvar].values, estr
                                         else:
                                             assert np.any(xdata[dvar].values
-                                                          == fill_val), estr
+                                                          == fval), estr
 
         return
 
@@ -519,7 +512,7 @@ class TestExpandXarrayDims(object):
         self.set_data_meta(dims_equal)
 
         # Run the dimension expansion
-        self.out = coords.expand_xarray_dims(self.data_list, self.meta,
+        self.out = coords.expand_xarray_dims(self.data_list,
                                              dims_equal=dims_equal,
                                              exclude_dims=exclude_dims)
 
@@ -547,12 +540,9 @@ class TestExpandXarrayDims(object):
             new_data_type)
 
         # Run the dimension expansion
-        self.out = coords.expand_xarray_dims(self.data_list, self.meta,
-                                             dims_equal=True)
+        self.out = coords.expand_xarray_dims(self.data_list, dims_equal=True)
 
         # Test the results
-        fill_val = self.meta.labels.default_values_from_type(
-            self.meta.labels.label_type['fill_val'], new_data_type)
-        self.eval_dims(True, default_fill_val=fill_val)
+        self.eval_dims(True)
 
         return

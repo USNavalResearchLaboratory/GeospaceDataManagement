@@ -18,6 +18,7 @@ import pandas as pds
 import xarray as xr
 
 import GeospaceDataManagement as gdm
+from GeospaceDataManagement.utils import meta
 
 
 def adjust_cyclic_data(samples, high=2.0 * np.pi, low=0.0):
@@ -88,7 +89,7 @@ def update_longitude(inst, lon_name=None, high=180.0, low=-180.0):
 
 
 def calc_solar_local_time(inst, lon_name=None, slt_name='slt',
-                          apply_modulus=True, ref_date=None):
+                          apply_modulus=True, ref_date=None, meta_labels=None):
     """Append solar local time to an instrument object.
 
     Parameters
@@ -107,6 +108,10 @@ def calc_solar_local_time(inst, lon_name=None, slt_name='slt',
     ref_date : dt.datetime or NoneType
         Reference initial date. If None, will use the date found at
         `inst.date`. Only valid if apply_modulus is True. (default=None)
+    meta_labels : dict or NoneType
+        Map for meta data labels, or None to use defaults.  If used, expects
+        keys to include any of: 'units', 'name', 'desc', 'min_val', 'max_val',
+        or 'fill_val' (default=None)
 
     Notes
     -----
@@ -191,16 +196,19 @@ def calc_solar_local_time(inst, lon_name=None, slt_name='slt',
         min_val = -np.inf
         max_val = np.inf
 
-    # Add the solar local time to the instrument
-    inst.data = inst.data.assign({slt_name: (coords, slt.data)})
+    # Add units to the metadata
+    meta_dict = {'units': 'h', 'name': "Solar Local Time",
+                 'desc': "Solar local time in hours", 'min_val': min_val,
+                 'max_val': max_val, 'fill_val': fill_val}
 
-    # Add units to the metadata TODO
-    # inst.meta[slt_name] = {inst.meta.labels.units: 'h',
-    #                        inst.meta.labels.name: "Solar Local Time",
-    #                        inst.meta.labels.desc: "Solar local time in hours",
-    #                        inst.meta.labels.min_val: min_val,
-    #                        inst.meta.labels.max_val: max_val,
-    #                        inst.meta.labels.fill_val: fill_val}
+    if meta_labels is not None:
+        for mlabel in meta_labels.keys():
+            # Update the meta data label from the default to the custom value
+            meta_dict[meta_labels[mlabel]] = meta_dict[mlabel]
+            del meta_dict[mlabel]
+
+    # Add the solar local time to the instrument with the meta data
+    inst.data = inst.data.assign({slt_name: (coords, slt.data, meta_dict)})
 
     return
 
@@ -276,21 +284,22 @@ def establish_common_coord(coord_vals, common=True):
     return out_coord
 
 
-def expand_xarray_dims(data_list, meta, dims_equal=False, exclude_dims=None):
+def expand_xarray_dims(data_list, dims_equal=False, exclude_dims=None,
+                       fill_label='fill_val'):
     """Ensure that dimensions do not vary when concatenating data.
 
     Parameters
     ----------
     data_list : list-like
         List of xr.Dataset objects with the same dimensions and variables
-    meta : pysat.Meta
-        Metadata for the data in `data_list`
     dims_equal : bool
         Assert that all xr.Dataset objects have the same dimensions if True,
         the Datasets in `data_list` may have differing dimensions if False.
         (default=False)
     exclude_dims : list-like or NoneType
         Dimensions to exclude from evaluation or None (default=None)
+    fill_label : str
+        Meta data label for fill values (default='fill_val')
 
     Returns
     -------
@@ -300,8 +309,6 @@ def expand_xarray_dims(data_list, meta, dims_equal=False, exclude_dims=None):
         needed.
 
     """
-    raise RuntimeError('fix for new meta structure')
-
     # Get a list of the dimensions to exclude
     if exclude_dims is None:
         exclude_dims = []
@@ -356,19 +363,18 @@ def expand_xarray_dims(data_list, meta, dims_equal=False, exclude_dims=None):
                     new_shape[idim] = combo_dims[dim]
 
                 # Get the fill value
-                if dvar in meta:
+                if fill_label in sdata[dvar].attrs.keys():
                     # If available, take it from the metadata
-                    fill_val = meta[dvar, meta.labels.fill_val]
+                    fill_val = sdata[dvar].attrs[fill_label]
                 else:
                     # Otherwise, use the data type
-                    ftype = type(sdata[dvar].values.flatten()[0])
-                    fill_val = meta.labels.default_values_from_type(
-                        meta.labels.label_type['fill_val'], ftype)
+                    fill_val = meta.default_fill_values_from_type(
+                        sdata[dvar].dtype.type)
 
                 # Set the new data for output
                 new_dat = np.full(shape=new_shape, fill_value=fill_val)
                 new_dat[tuple(old_slice)] = sdata[dvar].values
-                new_data[dvar] = (sdata[dvar].dims, new_dat)
+                new_data[dvar] = (sdata[dvar].dims, new_dat, sdata[dvar].attrs)
             else:
                 new_data[dvar] = sdata[dvar]
 
