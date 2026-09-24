@@ -395,7 +395,7 @@ class TestBasics(object):
         assert files.index.is_monotonic_increasing
 
         # Check overall length
-        assert len(files) == len(dates), len(tfiles)
+        assert len(files) == len(dates)
 
         # Check specific date
         assert np.all(files.index == dates)
