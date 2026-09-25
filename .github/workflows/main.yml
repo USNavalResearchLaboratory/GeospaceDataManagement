@@ -91,6 +91,8 @@ jobs:
       run: |
         mkdir gdmData
         python -c "import GeospaceDataManagement; GeospaceDataManagement.params['data_dirs'] = 'gdmData'"
+        ls -a
+        ls -a .gdm
 
     - name: Test PEP8 compliance
       run: flake8 . --count --select=D,E,F,H,W --show-source --statistics
