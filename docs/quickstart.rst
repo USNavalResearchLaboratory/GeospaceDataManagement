@@ -28,9 +28,10 @@ it will remind you that you need to set this variable for your system.
    path that specifies a top-level directory to store science data.
 
 Most people are fine setting a single path for all of their data, but other
-people have a LOT of data and need to store it on multiple disks. GeospaceDataManagement supports
-setting the :py:attr:`data_dirs` parameter equal to either a string or a list of
-strings, as illustrated in the example below.
+people have a LOT of data and need to store it on multiple disks.
+GeospaceDataManagement supports setting the :py:attr:`data_dirs` parameter
+equal to either a string or a list of strings, as illustrated in the example
+below.
 
 .. code:: python
 
