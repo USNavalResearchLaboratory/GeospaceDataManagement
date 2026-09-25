@@ -889,9 +889,10 @@ class Instrument(object):
                 # Try loading as values
                 self.data[var_key].loc[indict] = in_data
             except (TypeError, KeyError, IndexError):
-                # Original code
-                # Try loading indexed as integers
-                self.data[key[-1]][indict] = in_data
+                # Input is probably an integer, get the desired data
+                sel_dat = self.data.isel(indict)
+                self.data[var_key].loc[{ikey: sel_dat[ikey].values
+                                        for ikey in indict.keys()}] = in_data
 
             # Finish updating by adding meta data
             self.data[var_key].attrs.update(new)
