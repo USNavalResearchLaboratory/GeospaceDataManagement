@@ -834,6 +834,11 @@ class Instrument(object):
             # Simple assignment
             inst['name'] = newData
 
+            # Assignment with Metadata
+            inst['name'] = {'data':new_data,
+                            'long_name':long_name,
+                            'units':units}
+
         Raises
         ------
         ValueError
@@ -846,7 +851,6 @@ class Instrument(object):
         If a single new value is set, the value will be broadcast over time.
 
         """
-
         new = copy.deepcopy(new_data)
 
         # xarray format chosen for Instrument object
@@ -888,6 +892,9 @@ class Instrument(object):
                 # Original code
                 # Try loading indexed as integers
                 self.data[key[-1]][indict] = in_data
+
+            # Finish updating by adding meta data
+            self.data[var_key].attrs.update(new)
 
             return
         elif isinstance(key, str):
@@ -956,6 +963,9 @@ class Instrument(object):
             # individually.
             for keyname in key:
                 self.data[keyname] = in_data[keyname]
+
+        # Attach meta data
+        self.data[key].attrs.update(new)
 
         return
 
@@ -1608,7 +1618,7 @@ class Instrument(object):
                          np.dtypes.StringDType, np.dtypes.BytesDType,
                          pds.StringDtype]
         except AttributeError:
-            # TODO(#1227) np.dtypes not introduced until somewhere around
+            # TODO(#1) np.dtypes not introduced until somewhere around
             #  numpy version 1.25
             str_types = [str, np.str_, np.bytes_, pds.StringDtype]
 
