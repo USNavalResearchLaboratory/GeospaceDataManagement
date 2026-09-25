@@ -834,9 +834,8 @@ class InstAccessTests(object):
                                       'units': 'hours',
                                       'long_name': 'double trouble'}
         assert np.all(self.testInst['doubleMLT'] == 2. * self.testInst['mlt'])
-        # TODO META
-        # assert self.testInst.meta['doubleMLT'].units == 'hours'
-        # assert self.testInst.meta['doubleMLT'].long_name == 'double trouble'
+        assert self.testInst['doubleMLT'].attrs['units'] == 'hours'
+        assert self.testInst['doubleMLT'].attrs['long_name'] == 'double trouble'
         return
 
     @pytest.mark.parametrize("changed,fixed",
@@ -948,9 +947,8 @@ class InstAccessTests(object):
             # Check for new name in the data and metadata
             inst_var = values[key].lower() if lowercase else values[key]
             assert inst_var in self.testInst.variables
-            # TODO assert values[key] in self.testInst.meta.keys()
+            assert len(self.testInst[inst_var].attrs) > 0
 
             # Ensure old name not present
             assert key not in self.testInst.variables
-            # TODO assert key not in self.testInst.meta.keys()
         return

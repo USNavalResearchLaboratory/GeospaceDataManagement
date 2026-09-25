@@ -367,7 +367,7 @@ class TestEstCommonCoord(object):
 
 
 class TestExpandXarrayDims(object):
-    """Unit tests for the `expand_xarray_dims` function TODO."""
+    """Unit tests for the `expand_xarray_dims` function."""
 
     def setup_method(self):
         """Set up the unit test environment."""

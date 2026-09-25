@@ -91,7 +91,7 @@ class TestUpdateFill(object):
         inst.load(date=self.ref_time)
 
         # Ensure there are fill values to check for strings and numbers
-        # TODO(#XX) Remove try/except after numpy >= 1.25
+        # TODO(#1) Remove try/except after numpy >= 1.25
         try:
             str_types = [str, np.str_, np.bytes_, np.dtypes.StrDType,
                          np.dtypes.StringDType, np.dtypes.BytesDType,
