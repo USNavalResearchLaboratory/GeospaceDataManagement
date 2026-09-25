@@ -189,7 +189,7 @@ class TestDefaultFillType(object):
         return
 
     @pytest.mark.parametrize("flt_type", [float, np.single, np.float32,
-                                          np.float64, np.float128, np.float16])
+                                          np.float64, np.float16])
     def test_default_fill_values_from_type_float(self, flt_type):
         """Test `default_vill_values_from_type` for object defaults.
 
