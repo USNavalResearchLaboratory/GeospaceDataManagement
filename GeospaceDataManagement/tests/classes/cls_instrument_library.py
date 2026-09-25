@@ -473,7 +473,7 @@ class InstLibTests(object):
 
         # Check the empty status
         assert self.test_inst.empty, "Data was loaded for a far-future time"
-        assert self.test_inst.data.dims == xr.Dataset().dims, "Dims not empty"
+        assert self.test_inst.data.sizes == xr.Dataset().sizes, "Dims not empty"
         assert (self.test_inst.data.data_vars
                 == xr.Dataset().data_vars), "Data variables not empty"
 
