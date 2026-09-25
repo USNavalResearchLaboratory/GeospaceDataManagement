@@ -1,4 +1,4 @@
-"""GeospaceDataManagement
+"""GeospaceDataManagement (a.k.a. gdm).
 
 A package providing a simple and flexible interface for
 downloading, loading, cleaning, and managing scientific measurements.

@@ -1201,13 +1201,13 @@ class Instrument(object):
 
         Notes
         -----
-        methods
+        methods include:
             init, preprocess, and clean
-        functions
+        functions include:
             load, list_files, download, and list_remote_files, concat_data
-        attributes
+        attributes include:
             directory_format, file_format, and multi_file_day
-        test attributes
+        test attributes include:
             _test_download, _test_download_ci, _new_tests, and _password_req
 
         """

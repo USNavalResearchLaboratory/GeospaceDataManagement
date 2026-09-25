@@ -14,6 +14,7 @@
 """Utilities to perform common testing evaluations."""
 
 import numpy as np
+
 from GeospaceDataManagement import utils as gdm_utils
 
 
