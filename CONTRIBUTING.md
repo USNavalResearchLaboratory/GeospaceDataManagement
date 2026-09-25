@@ -1,32 +1,27 @@
-Contributing
-============
+# Contributing
 
 Bug reports, feature suggestions, and other contributions are greatly
 appreciated!  GeospaceDataManager welcomes both feedback and contributions.
 
-Short version
--------------
+## Short version
 
 * Submit bug reports, feature requests, and questions at
   [GitHub](https://github.com/USNavalResearchLaboratory/GeospaceDataManager/issues)
 
 * Make all pull requests to the ``develop`` branch
 
-Issues
-------
+## Issues
 
 Bug reports, questions, and feature requests should all be made as GitHub
 Issues.  Templates are provided for each type of issue, to help you include
 all the necessary information.
 
-Questions
-^^^^^^^^^
+### Questions
 
 Not sure how something works?  Ask away!  The more information you provide, the
 easier the question will be to answer.
 
-Bug reports
-^^^^^^^^^^^
+### Bug reports
 
 When [reporting a bug](https://github.com/GeospaceDataManager/GeospaceDataManager/issues) please include:
 
@@ -36,8 +31,7 @@ When [reporting a bug](https://github.com/GeospaceDataManager/GeospaceDataManage
 
 * Detailed steps to reproduce the bug
 
-Feature requests and feedback
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+### Feature requests and feedback
 
 The best way to send feedback is to file an
 [issue](https://github.com/GeospaceDataManager/GeospaceDataManager/issues).
@@ -49,8 +43,7 @@ If you are proposing a new feature or a change in something that already exists:
 * Keep the scope as narrow as possible, to make it easier to implement.
 
 
-Development
------------
+## Development
 
 To set up `GeospaceDataManager` for local development:
 
@@ -124,8 +117,7 @@ To set up `GeospaceDataManager` for local development:
     GeospaceDataManager team for outside contributors.
 
 
-Pull Request Guidelines
------------------------
+## Pull Request Guidelines
 
 If you need some code review or feedback while you're developing the code, just
 make a pull request. Pull requests should be made to the ``develop`` branch.
@@ -145,8 +137,7 @@ will delay tests by other developers, please ensure that the code passes all
 tests on your local system first.
 
 
-Project Style Guidelines
-------------------------
+## Project Style Guidelines
 
 In general, GeospaceDataManager follows PEP8 and numpydoc guidelines.  Pytest
 runs the unit and integration tests, flake8 checks for style, and sphinx-build

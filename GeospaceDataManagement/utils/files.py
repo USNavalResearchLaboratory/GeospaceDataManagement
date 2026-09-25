@@ -643,7 +643,7 @@ def update_data_directory_structure(new_template, test_run=True,
     new_template : str
         New directory template string. The default value for
         GeospaceDataManagement is
-         `os.path.join(('{platform}', '{name}', '{tag}', '{inst_id}'))`
+        `os.path.join(('{platform}', '{name}', '{tag}', '{inst_id}'))`
     test_run : bool
         If True, a printout of all proposed changes will be made, but the
         directory changes will not be enacted. (default=True)

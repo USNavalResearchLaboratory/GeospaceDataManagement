@@ -88,5 +88,4 @@ Explore the Possibilities
 
 At this point, you are set up to start exploring the tools and methods
 :py:mod:`GeospaceDataManagement` provides. For a more detailed
-dive into :py:mod:`GeospaceDataManagement`, check out the :ref:`tutorial` and
-:ref:`examples`.
+dive into :py:mod:`GeospaceDataManagement`, check out the :ref:`tutorial`.

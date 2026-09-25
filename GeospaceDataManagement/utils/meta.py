@@ -86,8 +86,8 @@ def get_meta_dict(**kwargs):
     meta_dict : dict
         Dictionary with keys of 'units', 'name', 'min_val', 'max_val', 'desc',
         'notes', and 'fill_val', along with any additional keys from the input
-         parameters. Standard values will be assigned, unless these keys are
-         supplied upon input.
+        parameters. Standard values will be assigned, unless these keys are
+        supplied upon input.
 
     """
     # Set the defaults
