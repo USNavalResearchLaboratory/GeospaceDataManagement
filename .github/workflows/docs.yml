@@ -29,7 +29,8 @@ jobs:
     - name: Set up the data directory
       run: |
         mkdir gdmData
-        python -c "import GeospaceDataManagement as gdm; gdm.params['data_dirs'] = './gdmData'"
+        python -c "import GeospaceDataManagement as gdm; gdm.params['data_dirs'] = './gdmData'; print(gdm.params)"
+        ls ~/.gdm
 
     - name: Check documentation build
       run: sphinx-build -E -b html docs dist/docs
