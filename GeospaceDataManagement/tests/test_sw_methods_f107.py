@@ -22,8 +22,8 @@ import xarray as xr
 import GeospaceDataManagement as gdm
 
 try:
-    from GeospaceDataManagement.instruments.sw_methods import f107 as mm_f107
     from GeospaceDataManagement.instruments import sw_f107
+    from GeospaceDataManagement.instruments.sw_methods import f107 as mm_f107
     no_sw = False
 except ImportError:
     no_sw = True
