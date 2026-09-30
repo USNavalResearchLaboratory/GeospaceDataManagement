@@ -19,7 +19,7 @@ import pandas as pds
 import xarray as xr
 
 import GeospaceDataManagement as gdm
-from GeospaceDataManagement.instruments.sw_methods import general
+from GeospaceDataManagement.instruments.methods.general import is_fill_val
 from GeospaceDataManagement.instruments.sw_methods import gfz
 from GeospaceDataManagement.instruments.sw_methods import swpc
 
@@ -198,7 +198,7 @@ def get_bartel_metadata(data_key, fill_val=-1, unit_label='units',
     elif data_key.find('day_within') >= 0:
         units = 'day'
         bname = 'Days within Bartels solar rotation'
-        desc = 'Number of day within the Bartels solar rotation',
+        desc = 'Number of days within the Bartels solar rotation'
         max_val = 27
     else:
         raise ValueError('unknown data key: {:}'.format(data_key))
@@ -272,10 +272,7 @@ def convert_3hr_kp_to_ap(kp_inst, var_name='Kp', unit_label='units',
     # Convert from Kp to ap
     fill_val = kp_inst[var_name].attrs[fill_label]
     ap_data = np.array([ap(kp) if kp != fill_val else fill_val
-                        for kp in kp_inst[var_name]])
-
-    # Append the output to the Instrument
-    kp_inst['3hr_ap'] = pds.Series(ap_data, index=kp_inst.index)
+                        for kp in kp_inst[var_name].values])
 
     # Add metadata
     meta_dict = get_ap_metadata(fill_val, unit_label=unit_label,
@@ -285,8 +282,9 @@ def convert_3hr_kp_to_ap(kp_inst, var_name='Kp', unit_label='units',
     meta_dict[note_label] = ''.join([
         'ap converted from Kp as described at: ',
         'https://www.ngdc.noaa.gov/stp/GEOMAG/kp_ap.html'])
-    kp_inst['3hr_ap'].attrs.update(meta_dict)
 
+    # Append the output to the Instrument
+    kp_inst['3hr_ap'] = ((kp_inst.index.name), ap_data, meta_dict)
     return
 
 
@@ -342,15 +340,30 @@ def calc_daily_Ap(ap_inst, ap_name='3hr_ap', daily_name='Ap',
 
     # Test that the necessary data is available
     if ap_name not in ap_inst.variables:
-        raise ValueError("bad 3-hourly ap column name: {:}".format(ap_name))
+        raise ValueError("bad 3-hourly ap variable name: {:}".format(ap_name))
 
     # Test to see that we will not be overwritting data
     if daily_name in ap_inst.variables:
-        raise ValueError("daily Ap column name already exists: " + daily_name)
+        raise ValueError("daily Ap variable name already exists: " + daily_name)
 
-    # Calculate the daily mean value
-    ap_mean = ap_inst[ap_name].rolling(window='1D',
+    # Calculate the daily mean value, first filling the data to the desired
+    # 3-hour frequency
+    time_name = ap_inst.index.name
+    ap_fill = ap_inst.data.resample(**{time_name: '3h'}).asfreq()
+
+    # Now replace the time index with an ordinal in hours
+    time_ind = ap_fill[time_name].values
+    ap_fill['ordinal'] = ((time_name), [
+        int((tt - time_ind[0]) / np.timedelta64(3, 'h')) for tt in time_ind])
+    ap_fill = ap_fill.swap_dims({time_name: 'ordinal'})
+
+    # Calculate the mean
+    ap_mean = ap_fill[ap_name].rolling(ordinal=8,
                                        min_periods=min_periods).mean()
+
+    # Replace the ordinal index with the time
+    ap_mean = ap_mean.swap_dims({'ordinal': time_name})
+    ap_mean.drop_vars('ordinal')
 
     if running_name is not None:
         ap_inst[running_name] = ap_mean
@@ -367,20 +380,27 @@ def calc_daily_Ap(ap_inst, ap_name='3hr_ap', daily_name='Ap',
     # Resample, backfilling so that each day uses the mean for the data from
     # that day only
     #
-    # Pad the data so the first day will be backfilled
+    # Pad the data so the first day will be backfilled and incomplete days will
+    # have fill values
     ap_pad = pds.Series(np.full(shape=(1,), fill_value=np.nan),
-                        index=[ap_mean.index[0] - pds.DateOffset(hours=3)])
+                        index=[ap_mean[time_name].values[0]
+                               - pds.DateOffset(hours=3)])
+    ap_full = pds.Series(
+        np.full(shape=ap_mean[time_name].shape, fill_value=np.nan),
+        index=ap_mean[time_name].values)
+    mean_ser = pds.Series(ap_mean, index=ap_mean[time_name])
 
     # Extract the mean that only uses data for one day
-    ap_sel = ap_pad.combine_first(ap_mean.iloc[[i for i, tt in
-                                                enumerate(ap_mean.index)
-                                                if tt.hour == 21]])
+    ap_sel = ap_pad.combine_first(mean_ser.iloc[[i for i, tt in
+                                                 enumerate(mean_ser.index)
+                                                 if tt.hour == 21]])
 
     # Backfill this data
-    ap_data = ap_sel.resample('3h').bfill()
+    ap_data = ap_sel.resample('3h').bfill().combine_first(ap_full)
 
     # Save the output for the original time range
-    ap_inst[daily_name] = pds.Series(ap_data[1:], index=ap_data.index[1:])
+    ap_inst[daily_name] = ((time_name), pds.Series(ap_data[1:],
+                                                   index=ap_data.index[1:]))
 
     # Add metadata
     meta_dict = get_ap_metadata(ap_inst[ap_name].attrs[fill_label],
@@ -389,7 +409,8 @@ def calc_daily_Ap(ap_inst, ap_name='3hr_ap', daily_name='Ap',
                                 fill_label=fill_label)
     meta_dict[desc_label] = "daily Ap index"
     meta_dict[note_label] = 'Ap daily mean calculated from 3-hourly ap indices'
-    ap_inst[daily_name].attrs.update(meta_dict)
+    ap_inst.data[daily_name].attrs.update(meta_dict)
+
     return
 
 
@@ -453,15 +474,19 @@ def filter_geomag(inst, min_kp=0, max_kp=9, filter_time=24, kp_inst=None,
     # Begin filtering, starting at the beginning of the instrument data
     sel_data = kp_inst[(inst.index[0] - dt.timedelta(days=1)):
                        (inst.index[-1] + dt.timedelta(days=1))]
-    ind, = np.where((sel_data[var_name] > max_kp)
-                    | (sel_data[var_name] < min_kp))
+    drop_data = sel_data.where((sel_data[var_name] > max_kp)
+                               | (sel_data[var_name] < min_kp), drop=True)
 
-    for lind in ind:
-        # Determine the time filter range for removing each flagged data
-        sind = sel_data.index[lind]
-        eind = sind + pds.DateOffset(hours=filter_time)
-        inst[sind:eind] = np.nan
-        inst.data = inst.data.dropna(axis=0, how='all')
+    # Determine the time filter range for removing each flagged data
+    for dtime in drop_data[kp_inst.index.name].values:
+        sind = pds.Timestamp(dtime).to_pydatetime()
+        eind = sind + dt.timedelta(hours=filter_time)
+        inst.data = inst.data.where(
+            (inst.data[inst.index.name] < np.datetime64(sind))
+            | (inst.data[inst.index.name] > np.datetime64(eind)), other=np.nan)
+
+    # Drop fill data
+    inst.data = inst.data.dropna(dim=inst.index.name, how='all')
 
     return
 
@@ -508,16 +533,21 @@ def convert_ap_to_kp(ap_data, fill_val=-1, ap_name='ap', kp_name='Kp',
         Dictionary with meta data
 
     """
+    # Ensure ap data is list-like
+    ap_data = gdm.utils.listify(ap_data)
 
     # Convert from ap to Kp
     kp_data = np.array([round_ap(aa, fill_val=fill_val) for aa in ap_data])
 
     # Set the metadata
-    meta_dict = get_kp_metadata(kp_data, 'Kp', fill_val)
+    meta_dict = get_kp_metadata(fill_val=fill_val, unit_label=unit_label,
+                                desc_label=desc_label, min_label=min_label,
+                                max_label=max_label, fill_label=fill_label)
     meta_dict[desc_label] = 'Kp converted from {:}'.format(ap_name)
     meta_dict[note_label] = ''.join(
         ['Kp converted from ', ap_name, 'as described at: ',
          'https://www.ngdc.noaa.gov/stp/GEOMAG/kp_ap.html'])
+    meta_dict[name_label] = 'Kp'
 
     # Return the data and metadata in the Instrument
     return kp_data, meta_dict
@@ -693,6 +723,7 @@ def combine_kp(standard_inst=None, recent_inst=None, forecast_inst=None,
 
     kp_times = list()
     kp_values = list()
+    index_name = None
 
     # Cycle through the desired time range
     itime = start
@@ -715,15 +746,18 @@ def combine_kp(standard_inst=None, recent_inst=None, forecast_inst=None,
                 good_times = ((standard_inst.index >= itime)
                               & (standard_inst.index < stop))
                 good_vals = np.array([
-                    not general.is_fill_val(val, local_fill_val)
+                    not is_fill_val(val, local_fill_val)
                     for val in standard_inst['Kp'][good_times]])
                 new_times = list(standard_inst.index[good_times][good_vals])
 
                 if len(new_times) > 0:
                     kp_times.extend(new_times)
                     kp_values.extend(list(
-                        standard_inst['Kp'][good_times][good_vals]))
+                        standard_inst['Kp'][good_times].values[good_vals]))
                     itime = kp_times[-1] + pds.DateOffset(hours=3)
+
+                    if index_name is None:
+                        index_name = standard_inst.index.name
                 else:
                     inst_flag = 'forecast' if recent_inst is None else 'recent'
                     notes += "{:})".format(itime.date())
@@ -757,7 +791,7 @@ def combine_kp(standard_inst=None, recent_inst=None, forecast_inst=None,
                     good_times = ((recent_inst.index >= itime)
                                   & (recent_inst.index < stop))
                     good_vals = np.array([
-                        not general.is_fill_val(val, local_fill_val)
+                        not is_fill_val(val, local_fill_val)
                         for val in recent_inst['Kp'][good_times]])
                     new_times = list(recent_inst.index[good_times][good_vals])
 
@@ -765,8 +799,11 @@ def combine_kp(standard_inst=None, recent_inst=None, forecast_inst=None,
                 if len(new_times) > 0:
                     kp_times.extend(new_times)
                     kp_values.extend(list(
-                        recent_inst['Kp'][good_times][good_vals]))
+                        recent_inst['Kp'][good_times].values[good_vals]))
                     itime = kp_times[-1] + pds.DateOffset(hours=3)
+
+                    if index_name is None:
+                        index_name = recent_inst.index.name
 
             inst_flag = 'forecast' if forecast_inst is not None else None
             notes += "{:})".format(itime.date())
@@ -798,11 +835,14 @@ def combine_kp(standard_inst=None, recent_inst=None, forecast_inst=None,
                     good_times = ((forecast_inst.index >= itime)
                                   & (forecast_inst.index < stop))
                     good_vals = np.array([
-                        not general.is_fill_val(val, local_fill_val)
+                        not is_fill_val(val, local_fill_val)
                         for val in forecast_inst['Kp'][good_times]])
 
                     # Save desired data
                     new_times = list(forecast_inst.index[good_times][good_vals])
+
+                    if index_name is None:
+                        index_name = forecast_inst.index.name
 
                     if len(new_times) > 0:
                         kp_times.extend(new_times)
@@ -819,6 +859,9 @@ def combine_kp(standard_inst=None, recent_inst=None, forecast_inst=None,
     if inst_flag is not None:
         notes += "{:})".format(itime.date())
 
+    if index_name is None:
+        index_name = 'time'
+
     # Determine if the beginning or end of the time series needs to be padded
     freq = None if len(kp_times) < 2 else gdm.utils.time.calc_freq(kp_times)
     end_date = stop - pds.DateOffset(days=1)
@@ -826,6 +869,7 @@ def combine_kp(standard_inst=None, recent_inst=None, forecast_inst=None,
 
     if len(kp_times) == 0:
         kp_times = date_range
+        kp_values = [fill_val for i in range(len(kp_times))]
 
     if date_range[0] < kp_times[0]:
         # Extend the time and value arrays from their beginning with fill
@@ -852,14 +896,15 @@ def combine_kp(standard_inst=None, recent_inst=None, forecast_inst=None,
     kp_meta[note_label] = notes
 
     # Save output data and meta data
-    kp_inst.data = xr.Dataset({'time': (('time'), kp_times),
-                               'Kp': (('time'), kp_values, kp_meta)})
+    kp_inst.data = xr.Dataset({index_name: ((index_name), kp_times),
+                               'Kp': ((index_name), kp_values, kp_meta)})
 
     # Resample the output data, filling missing values
     if (date_range.shape != kp_inst.index.shape
             or abs(date_range - kp_inst.index).max().total_seconds() > 0.0):
-        kp_inst.data = kp_inst.data.resample(freq).asfreq()
-        if np.isfinite(fill_val):
-            kp_inst.data[np.isnan(kp_inst.data)] = fill_val
+        kp_inst.data = kp_inst.data.resample(**{index_name: freq}).asfreq()
+        nan_fill = np.isnan(kp_inst.data['Kp'].values)
+        if np.isfinite(fill_val) and nan_fill.any():
+            kp_inst.data['Kp'][nan_fill] = fill_val
 
     return kp_inst

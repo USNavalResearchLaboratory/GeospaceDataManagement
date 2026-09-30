@@ -116,7 +116,7 @@ def clean(self):
     max_status = mm_ace.clean(self)
 
     # Replace bad values with NaN and remove times with no valid data
-    self.data = self.data[self.data['status'] <= max_status]
+    self.data = self.data.where(self.data['status'] <= max_status, drop=True)
 
     return
 
@@ -156,8 +156,9 @@ def load(fnames, tag='', inst_id=''):
     """
 
     # Save each file to the output DataFrame
-    data = load_csv_data(fnames, read_csv_kwargs={'index_col': 0,
-                                                  'parse_dates': True})
+    data = load_csv_data(fnames,
+                         read_csv_kwargs={'index_col': 0,
+                                          'parse_dates': True}).to_xarray()
 
     # Assign the meta data
     meta, status_desc = mm_ace.common_metadata()
@@ -184,8 +185,7 @@ def load(fnames, tag='', inst_id=''):
                        'desc': 'GSM Longitude', 'fill_val': -999.9,
                        'min_val': 0.0, 'max_val': 360.0}
 
-    # Convert the data to xarray and add meta data
-    data = data.to_xarray()
+    # Add the meta data
     for dvar in data.data_vars.keys():
         if dvar in meta.keys():
             data[dvar].attrs.update(meta[dvar])

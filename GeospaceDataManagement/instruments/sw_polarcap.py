@@ -57,9 +57,9 @@ is not appropriate for these tags data.
 
 import datetime as dt
 import functools
-import pandas as pds
 
 import GeospaceDataManagement as gdm
+from GeospaceDataManagement.instruments.methods import general
 from GeospaceDataManagement.instruments import sw_methods
 
 # ----------------------------------------------------------------------------
@@ -132,12 +132,8 @@ def load(fnames, tag='', inst_id=''):
 
     """
     # Load the data
-    all_data = []
-    for fname in fnames:
-        result = pds.read_csv(fname, index_col=0, parse_dates=True)
-        all_data.append(result)
-
-    data = pds.concat(all_data).to_xarray()
+    data = general.load_csv_data(
+        fnames, {'index_col': 0, 'parse_dates': True}).to_xarray()
 
     # Initialize the metadata
     for dkey in data.data_vars.keys():

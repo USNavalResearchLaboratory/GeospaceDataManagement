@@ -15,7 +15,9 @@
 
 Notes
 -----
-Imports test methods from gdm.tests.instrument_test_class
+Imports test methods from gdm.tests.classes.cls_instrument_library, all
+Instruments must undergo this testing in a single class as the pytest markers
+cannot be updated for that test class mid-test.
 
 """
 
@@ -26,8 +28,8 @@ import pandas as pds
 import pytest
 
 import GeospaceDataManagement as gdm
-import GeospaceDataManagement.tests.classes.cls_instrument_library as \
-    cls_inst_lib
+from GeospaceDataManagement.utils import generate_instrument_list
+import GeospaceDataManagement.tests.classes.cls_instrument_library as clslib
 from GeospaceDataManagement.tests.classes.cls_instrument_library import \
     InstLibTests
 
@@ -36,11 +38,16 @@ from GeospaceDataManagement.tests.classes.cls_instrument_library import \
 user_info = {'gdm_testing': {'user': 'gdm_testing',
                              'password': 'angeline.g.burrell.civ@us.navy.mil'}}
 
-# Initialize tests for sources in gdm.instruments in the same way data sources
-# outside of GeospaceDataManagement would be tested
-instruments = InstLibTests.initialize_test_package(InstLibTests,
-                                                   inst_loc=gdm.instruments,
-                                                   user_info=user_info)
+# Initialize tests for sources in gdm.instruments. Keep seperate lists for
+# different optional installation structures to allow testing only the
+# available instruments
+test_instruments = generate_instrument_list(inst_loc=gdm.instruments,
+                                            user_info=user_info, subset='test')
+sw_instruments = generate_instrument_list(inst_loc=gdm.instruments, subset='sw')
+instruments = clslib.InstLibTests.initialize_test_package(
+    clslib.InstLibTests, inst_loc=gdm.instruments, user_info=user_info,
+    inst_subset='all')
+no_sw = False if len(sw_instruments['names']) > 0 else True
 
 
 class TestInstruments(InstLibTests):
@@ -49,14 +56,12 @@ class TestInstruments(InstLibTests):
     Notes
     -----
     All standard tests, setup, and teardown inherited from the core
-    instrument test class.
+    instrument test class. As the markers are custom and can only be set
+    once, all groups of instruments must be tested in this class
 
     """
-
-    # Custom package unit tests can be added here
-
-    # Custom Integration Tests added to all test instruments in core package
-    @pytest.mark.parametrize("inst_dict", instruments['download'])
+    # Tests specifically for the GeospaceDataMangement test instruments
+    @pytest.mark.parametrize("inst_dict", test_instruments['download'])
     @pytest.mark.parametrize("kwarg,output", [(None, 0.0),
                                               (dt.timedelta(hours=1), 3600.0)])
     def test_inst_start_time(self, inst_dict, kwarg, output):
@@ -74,7 +79,7 @@ class TestInstruments(InstLibTests):
 
         """
 
-        _, date = cls_inst_lib.initialize_test_inst_and_date(inst_dict)
+        _, date = clslib.initialize_test_inst_and_date(inst_dict)
         if kwarg:
             self.test_inst = gdm.Instrument(
                 inst_module=inst_dict['inst_module'], start_time=kwarg)
@@ -87,7 +92,7 @@ class TestInstruments(InstLibTests):
         assert self.test_inst[0, 'uts'] == output
         return
 
-    @pytest.mark.parametrize("inst_dict", instruments['download'])
+    @pytest.mark.parametrize("inst_dict", test_instruments['download'])
     def test_inst_num_samples(self, inst_dict):
         """Test operation of num_samples keyword.
 
@@ -102,7 +107,7 @@ class TestInstruments(InstLibTests):
         # Number of samples needs to be <96 because freq is not settable.
         # Different test instruments have different default number of points.
         num = 10
-        _, date = cls_inst_lib.initialize_test_inst_and_date(inst_dict)
+        _, date = clslib.initialize_test_inst_and_date(inst_dict)
         self.test_inst = gdm.Instrument(inst_module=inst_dict['inst_module'],
                                         num_samples=num)
         self.test_inst.load(date=date)
@@ -110,7 +115,7 @@ class TestInstruments(InstLibTests):
         assert len(self.test_inst['uts']) == num
         return
 
-    @pytest.mark.parametrize("inst_dict", instruments['download'])
+    @pytest.mark.parametrize("inst_dict", test_instruments['download'])
     def test_inst_file_date_range(self, inst_dict):
         """Test operation of file_date_range keyword.
 
@@ -124,7 +129,7 @@ class TestInstruments(InstLibTests):
 
         file_date_range = pds.date_range(dt.datetime(2021, 1, 1),
                                          dt.datetime(2021, 12, 31))
-        _, date = cls_inst_lib.initialize_test_inst_and_date(inst_dict)
+        _, date = clslib.initialize_test_inst_and_date(inst_dict)
         self.test_inst = gdm.Instrument(inst_module=inst_dict['inst_module'],
                                         file_date_range=file_date_range,
                                         update_files=True)
@@ -133,7 +138,7 @@ class TestInstruments(InstLibTests):
         assert all(file_date_range == file_list.index)
         return
 
-    @pytest.mark.parametrize("inst_dict", instruments['download'])
+    @pytest.mark.parametrize("inst_dict", test_instruments['download'])
     def test_inst_max_latitude(self, inst_dict):
         """Test operation of max_latitude keyword.
 
@@ -145,7 +150,7 @@ class TestInstruments(InstLibTests):
 
         """
 
-        _, date = cls_inst_lib.initialize_test_inst_and_date(inst_dict)
+        _, date = clslib.initialize_test_inst_and_date(inst_dict)
         self.test_inst = gdm.Instrument(inst_module=inst_dict['inst_module'])
         if self.test_inst.name != 'testmodel':
             self.test_inst.load(date=date, max_latitude=10.)
@@ -161,7 +166,7 @@ class TestInstruments(InstLibTests):
     @pytest.mark.parametrize("change", [True, False])
     @pytest.mark.parametrize('warn_type', ['logger', 'warning', 'error',
                                            'mult'])
-    @pytest.mark.parametrize("inst_dict", instruments['download'])
+    @pytest.mark.parametrize("inst_dict", test_instruments['download'])
     def test_clean_with_warnings(self, clean_level, change, warn_type,
                                  inst_dict, caplog):
         """Run `test_clean_warn` with different warning behaviours.
@@ -218,4 +223,21 @@ class TestInstruments(InstLibTests):
         # Run the test
         self.test_clean_warn(clean_level, inst_dict, caplog)
 
+        return
+
+    # Tests specifically for the Space Weather instruments
+    @pytest.mark.skipif(no_sw, reason="Space Weather test only")
+    def test_45day_forecast_data_length(self):
+        """Test that the downloaded 45-day forecasts load 45 days of data."""
+        # Initalize the desired instrument parameters
+        inst_dict = {'inst_module': gdm.instruments.sw_f107,
+                     'tag': '45day', 'inst_id': ''}
+        _, date = clslib.initialize_test_inst_and_date(inst_dict)
+
+        # Load the downloaded data
+        self.test_inst = gdm.Instrument(**inst_dict)
+        self.test_inst.load(date=date)
+
+        # Test that 45 days of F10.7 data are available
+        assert len(self.test_inst['f107']) == 45
         return

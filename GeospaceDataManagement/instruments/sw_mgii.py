@@ -71,7 +71,7 @@ _test_dates = {'': {'composite': dt.datetime(1981, 11, 6),
 # ----------------------------------------------------------------------------
 # Instrument methods
 
-preprocess = general.preprocess
+preprocess = general.preprocess_fill
 
 
 def init(self):
@@ -185,14 +185,13 @@ def load(fnames, tag='', inst_id=''):
             'A simple linear correlation with the standard NOAA data product ',
             'can be used to scale this SORCE measurement to be compatible ',
             'with the long-term composite Mg II index maintained by NOAA.'])}
-    data['mg_index'].attrs.update({'units': '', 'name': 'MG II index',
-                                   'notes': notes[tag],
-                                   'desc': 'MG II core-to-wing ratio index',
-                                   'fill_val': np.nan, 'min_val': 0,
-                                   'max_val': np.inf})
+    data['mg_index'].attrs.update(
+        {'units': '', 'name': 'MG II index', 'notes': notes[tag],
+         'desc': 'MG II core-to-wing ratio index', 'fill_val': np.nan,
+         'min_val': 0, 'max_val': np.inf})
 
     if 'unc' in data:
-        data['unc'].attrs.udpate(
+        data['unc'].attrs.update(
             {'units': '', 'name': 'MG II Index Uncertainty',
              'notes': "".join([
                  "As described in Snow et al. (2005), the formal uncertainty",

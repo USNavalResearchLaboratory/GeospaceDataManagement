@@ -71,8 +71,6 @@ is not appropriate for these tags data.
 
 import datetime as dt
 import numpy as np
-import pandas as pds
-
 
 import GeospaceDataManagement as gdm
 from GeospaceDataManagement.instruments import sw_methods
@@ -161,12 +159,8 @@ def load(fnames, tag='', inst_id=''):
         fill_val = np.nan
     else:
         # Load the prediction, forecast or recent data
-        all_data = []
-        for fname in fnames:
-            result = pds.read_csv(fname, index_col=0, parse_dates=True)
-            all_data.append(result)
-
-        result = pds.concat(all_data)
+        result = gdm.instruments.methods.general.load_csv_data(
+            fnames, read_csv_kwargs={'parse_dates': True, 'index_col': 0})
         fill_val = -1
 
     # Recast the data

@@ -402,12 +402,13 @@ def ace_swepam_hourly_omni_norm(as_inst, speed_key='sw_bulk_speed',
     as_inst['sw_ion_temp_norm'] = pds.Series(norm_t, index=as_inst.index)
 
     # Add meta data
-    for dkey in [dens_key, temp_key]:
-        nkey = '{:s}_norm'.format(dkey)
+    for dkey, nkey in [[dens_key, 'sw_proton_dens_norm'],
+                       [temp_key, 'sw_ion_temp_norm']]:
         note = ''.join([
             'Normalized for hourly OMNI as described in ',
             'https://omniweb.gsfc.nasa.gov/html/omni_min_data.html'])
 
+        as_inst[nkey].attrs.update(as_inst[dkey].attrs)
         as_inst[nkey].attrs.update({note_label: note})
 
     return

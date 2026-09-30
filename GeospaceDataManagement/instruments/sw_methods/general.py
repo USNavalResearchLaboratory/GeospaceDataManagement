@@ -32,16 +32,20 @@ def preprocess_fill(inst, fill_label='fill_val'):
         Meta label for fill values
 
     """
-
     # Replace all fill values with NaN
     for col in inst.variables:
-        fill_val = inst[col].attrs[fill_label]
+        if fill_label in inst.data[col].attrs.keys():
+            fill_val = inst.data[col].attrs[fill_label]
+        else:
+            fill_val = gdm.utils.meta.default_fill_values_from_type(type(
+                inst.data[col].values.dtype))
 
         # Ensure we are dealing with a float for future nan comparison
         if isinstance(fill_val, np.floating) or isinstance(fill_val, float):
             if ~np.isnan(fill_val):
-                inst.data[col] = inst.data[col].replace(fill_val, np.nan)
-                inst[col].attrs[fill_label] = np.nan
+                inst.data[col] = inst.data[col].where(
+                    inst.data[col] != fill_val, other=np.nan)
+                inst.data[col].attrs[fill_label] = np.nan
 
     return
 

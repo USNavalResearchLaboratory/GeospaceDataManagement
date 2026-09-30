@@ -4,6 +4,7 @@
 #
 # ----------------------------------------------------------------------------
 # Original Authors: pysat development team (c) 2016, Russell Stoneback
+# Original Authors: pysat development team, (c) 2020 pysat
 #
 # Modified 2026+
 # This is a U.S. government work and not under copyright protection in the U.S.
@@ -15,6 +16,7 @@
 
 import datetime as dt
 from os import path
+import numpy as np
 import pandas as pds
 import pytest
 
@@ -324,4 +326,39 @@ class TestLoadCSVData(object):
 
         # Evaluate the empty output
         assert self.data.empty
+        return
+
+
+class TestGeneralFill(object):
+    """Test class for `is_fill_val` method ."""
+
+    def setup_method(self):
+        """Create a clean testing setup."""
+        self.var = 'check'
+        return
+
+    def teardown_method(self):
+        """Clean up previous testing setup."""
+        del self.var
+        return
+
+    @pytest.mark.parametrize("fill_val", [-1.0, -1, np.nan, np.inf, ''])
+    def test_is_fill(self, fill_val):
+        """Test the successful evaluation of fill values.
+
+        Parameters
+        ----------
+        fill_val : float, int, or str
+            Fill value to use as a comparison
+
+        """
+        # Set the data value to not be a fill value
+        if fill_val != '':
+            self.var = -47
+
+        # Evaluate the variable is False
+        assert not gen.is_fill_val(self.var, fill_val)
+
+        # Evaluate the fill value is a fill value
+        assert gen.is_fill_val(fill_val, fill_val)
         return

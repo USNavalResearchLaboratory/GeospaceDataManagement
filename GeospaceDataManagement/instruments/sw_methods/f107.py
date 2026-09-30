@@ -15,11 +15,12 @@
 
 import datetime as dt
 import numpy as np
-
 import pandas as pds
+import xarray as xr
 
 import GeospaceDataManagement as gdm
-from GeospaceDataManagement.instruments.sw_methods.general import is_fill_val
+from GeospaceDataManagement.instruments.methods.general import is_fill_val
+from GeospaceDataManagement.utils.meta import default_fill_values_from_type
 
 
 def acknowledgements(tag):
@@ -164,6 +165,7 @@ def combine_f107(standard_inst, forecast_inst, start=None, stop=None,
     f107_inst.date = start
     f107_inst.doy = np.int64(start.strftime("%j"))
     fill_val = None
+    index_name = None
 
     f107_times = list()
     f107_values = list()
@@ -188,6 +190,7 @@ def combine_f107(standard_inst, forecast_inst, start=None, stop=None,
             if standard_inst.empty:
                 good_times = [False]
             else:
+                index_name = standard_inst.index.name
                 good_times = ((standard_inst.index >= itime)
                               & (standard_inst.index < stop))
 
@@ -201,7 +204,10 @@ def combine_f107(standard_inst, forecast_inst, start=None, stop=None,
                     for var in standard_inst.variables:
                         f107_inst[var].attrs.update(standard_inst[var].attrs)
 
-                    fill_val = f107_inst['f107'].attrs[fill_label]
+                    if fill_label in f107_inst['f107'].attrs:
+                        fill_val = f107_inst['f107'].attrs[fill_label]
+                    else:
+                        fill_val = default_fill_values_from_type(float)
 
                 good_vals = np.array([not is_fill_val(val, fill_val) for val
                                       in standard_inst['f107'][good_times]])
@@ -211,7 +217,8 @@ def combine_f107(standard_inst, forecast_inst, start=None, stop=None,
 
             if len(new_times) > 0:
                 f107_times.extend(new_times)
-                new_vals = list(standard_inst['f107'][good_times][good_vals])
+                new_vals = list(standard_inst['f107'].values[good_times][
+                    good_vals])
                 f107_values.extend(new_vals)
                 itime = f107_times[-1] + pds.DateOffset(days=1)
             else:
@@ -251,7 +258,10 @@ def combine_f107(standard_inst, forecast_inst, start=None, stop=None,
                                 f107_inst[var].attrs.update(
                                     forecast_inst[var].attrs)
 
-                        fill_val = f107_inst['f107'].attrs[fill_label]
+                        if fill_label in f107_inst['f107'].attrs:
+                            fill_val = f107_inst['f107'].attrs[fill_label]
+                        else:
+                            fill_val = default_fill_values_from_type(float)
 
                     # Get the good times and values
                     good_times = ((forecast_inst.index >= itime)
@@ -259,6 +269,8 @@ def combine_f107(standard_inst, forecast_inst, start=None, stop=None,
                     good_vals = np.array([
                         not is_fill_val(val, fill_val) for val
                         in forecast_inst['f107'][good_times]])
+                    if index_name is None:
+                        index_name = forecast_inst.index.name
 
                 # Save desired data and cycle time
                 if len(good_vals) > 0:
@@ -266,7 +278,7 @@ def combine_f107(standard_inst, forecast_inst, start=None, stop=None,
                         good_vals])
                     f107_times.extend(new_times)
                     new_vals = list(
-                        forecast_inst['f107'][good_times][good_vals])
+                        forecast_inst['f107'][good_times].values[good_vals])
                     f107_values.extend(new_vals)
                     itime = f107_times[-1] + pds.DateOffset(days=1)
 
@@ -276,6 +288,11 @@ def combine_f107(standard_inst, forecast_inst, start=None, stop=None,
 
     if inst_flag is not None:
         notes += "{:})".format(itime.date())
+
+    if index_name is None:
+        index_name = 'time'
+    if fill_val is None:
+        fill_val = default_fill_values_from_type(float)
 
     # Determine if the beginning or end of the time series needs to be padded
     if len(f107_times) >= 2:
@@ -287,6 +304,8 @@ def combine_f107(standard_inst, forecast_inst, start=None, stop=None,
 
     if len(f107_times) == 0:
         f107_times = date_range
+        freq = gdm.utils.time.calc_freq(f107_times)
+        f107_values = [fill_val for i in range(len(f107_times))]
 
     if date_range[0] < f107_times[0]:
         # Extend the time and value arrays from their beginning with fill
@@ -309,15 +328,18 @@ def combine_f107(standard_inst, forecast_inst, start=None, stop=None,
         f107_values.extend([fill_val for kk in extend_times])
 
     # Save output data
-    f107_inst.data = pds.DataFrame(f107_values, columns=['f107'],
-                                   index=f107_times)
+    data = xr.Dataset(data_vars={'f107': ((index_name), f107_values)},
+                      coords={index_name: f107_times})
 
     # Resample the output data, filling missing values
     if (date_range.shape != f107_inst.index.shape
             or abs(date_range - f107_inst.index).max().total_seconds() > 0.0):
-        f107_inst.data = f107_inst.data.resample(freq).asfreq()
-        if np.isfinite(fill_val):
-            f107_inst.data[np.isnan(f107_inst.data)] = fill_val
+        data = data.resample(**{index_name: freq}).asfreq()
+        if fill_val is not None and np.isfinite(fill_val):
+            data[np.isnan(f107_inst.data)] = fill_val
+
+    # Save the data to the instrument
+    f107_inst.data = data
 
     # Update the metadata notes for this procedure
     notes += ", in that order"
@@ -326,7 +348,8 @@ def combine_f107(standard_inst, forecast_inst, start=None, stop=None,
     return f107_inst
 
 
-def calc_f107a(f107_inst, f107_name='f107', f107a_name='f107a', min_pnts=41):
+def calc_f107a(f107_inst, f107_name='f107', f107a_name='f107a', min_pnts=41,
+               fill_label='fill_val'):
     """Calculate the 81 day mean F10.7.
 
     Parameters
@@ -339,6 +362,8 @@ def calc_f107a(f107_inst, f107_name='f107', f107a_name='f107a', min_pnts=41):
         Data column name for the F10.7a data (default='f107a')
     min_pnts : int
         Minimum number of points required to calculate an average (default=41)
+    fill_label : str
+        Meta fill value label (default='fill_val')
 
     Note
     ----
@@ -347,17 +372,18 @@ def calc_f107a(f107_inst, f107_name='f107', f107a_name='f107a', min_pnts=41):
     """
 
     # Test to see that the input data is present
-    if f107_name not in f107_inst.data.columns:
-        raise ValueError("unknown input data column: " + f107_name)
+    if f107_name not in f107_inst.variables:
+        raise ValueError("unknown input data variable: {:}".format(f107_name))
 
     # Test to see that the output data does not already exist
-    if f107a_name in f107_inst.data.columns:
-        raise ValueError("output data column already exists: " + f107a_name)
+    if f107a_name in f107_inst.variables:
+        raise ValueError("output data variable already exists: {:}".format(
+            f107a_name))
 
-    if f107_name in f107_inst.meta:
-        fill_val = f107_inst.meta[f107_name][f107_inst.meta.labels.fill_val]
+    if fill_label in f107_inst[f107_name].attrs:
+        fill_val = f107_inst.meta[f107_name].attrs[fill_label]
     else:
-        fill_val = np.nan
+        fill_val = default_fill_values_from_type(float)
 
     # Calculate the rolling mean.  Since these values are centered but rolling
     # function doesn't allow temporal windows to be calculated this way, create
@@ -365,63 +391,64 @@ def calc_f107a(f107_inst, f107_name='f107', f107a_name='f107a', min_pnts=41):
     #
     # Ensure the data are evenly sampled at a daily frequency, since this is
     # how often F10.7 is calculated.
-    f107_fill = f107_inst.data.resample('1D').asfreq()
+    time_name = f107_inst.index.name
+    f107_fill = f107_inst.data.resample(**{time_name: '1D'}).asfreq()
 
     # Replace the time index with an ordinal
-    time_ind = f107_fill.index
-    f107_fill['ord'] = pds.Series([tt.toordinal() for tt in time_ind],
-                                  index=time_ind)
-    f107_fill.set_index('ord', inplace=True)
+    time_ind = f107_fill[time_name].values
+    f107_fill['ordinal'] = ((time_name), [pds.Timestamp(tt).toordinal()
+                                          for tt in time_ind])
+    f107_fill = f107_fill.swap_dims({time_name: 'ordinal'})
 
     # Calculate the mean
-    f107_fill[f107a_name] = f107_fill[f107_name].rolling(window=81,
-                                                         min_periods=min_pnts,
-                                                         center=True).mean()
+    f107_fill[f107a_name] = f107_fill[f107_name].rolling(
+        ordinal=81, min_periods=min_pnts, center=True).mean(skipna=True)
 
     # Replace the ordinal index with the time
-    f107_fill['time'] = pds.Series(time_ind, index=f107_fill.index)
-    f107_fill.set_index('time', inplace=True)
+    f107_fill = f107_fill.swap_dims({'ordinal': time_name})
+    f107_fill.drop_vars('ordinal')
 
     # Resample to the original frequency, if it is not equal to 1 day
     freq = gdm.utils.time.calc_freq(f107_inst.index)
     if freq != "86400s":
         # Resample to the desired frequency
-        f107_fill = f107_fill.resample(freq).ffill()
+        f107_fill = f107_fill.resample(**{time_name: freq}).ffill()
 
         # Save the output in a list
-        f107a = list(f107_fill[f107a_name])
+        f107a = f107_fill[f107a_name]
+        f107a_values = list(f107a.values)
 
         # Fill any dates that fall just outside of the range
-        time_ind = pds.date_range(f107_fill.index[0], f107_inst.index[-1],
-                                  freq=freq)
-        for itime in time_ind[f107_fill.index.shape[0]:]:
-            if (itime - f107_fill.index[-1]).total_seconds() < 86400.0:
-                f107a.append(f107a[-1])
+        time_ind = pds.date_range(f107a[time_name].values[0],
+                                  f107_inst.index[-1], freq=freq)
+        for itime in time_ind[f107a[time_name].shape[0]:]:
+            if (itime - f107a[time_name].values[-1]).total_seconds() < 86400.0:
+                f107a_values.append(f107a[-1])
             else:
-                f107a.append(fill_val)
+                f107a_values.append(fill_val)
 
-        # Redefine the Series
-        f107_fill = pds.DataFrame({f107a_name: f107a}, index=time_ind)
+        # Redefine the data
+
+        f107_fill = xr.Dataset({f107a_name: ((time_name), f107a_values),
+                                time_name: ((time_name), time_ind)})
 
     # There may be missing days in the output data, remove these
-    if f107_inst.index.shape < f107_fill.index.shape:
+    if f107_inst.index.shape < f107_fill[time_name].shape:
         f107_fill = f107_fill.loc[f107_inst.index]
+
+    # Update the metadata
+    if len(f107_inst.index) > 1:
+        notes = ''.join(('Calculated using data between ',
+                         '{:} and {:}'.format(f107_inst.index[0],
+                                              f107_inst.index[-1])))
+    else:
+        notes = 'Calculated using times: {:}'.format(f107_inst.index)
+    meta_dict = {'units': 'SFU', 'name': 'F10.7a', 'notes': notes,
+                 'desc': "81-day centered average of F10.7",
+                 'min_val': 0.0, 'max_val': np.nan, fill_label: fill_val}
 
     # Save the data
     f107_inst[f107a_name] = f107_fill[f107a_name]
-
-    # Update the metadata
-    meta_dict = {f107_inst.meta.labels.units: 'SFU',
-                 f107_inst.meta.labels.name: 'F10.7a',
-                 f107_inst.meta.labels.desc: "81-day centered average of F10.7",
-                 f107_inst.meta.labels.min_val: 0.0,
-                 f107_inst.meta.labels.max_val: np.nan,
-                 f107_inst.meta.labels.fill_val: fill_val,
-                 f107_inst.meta.labels.notes:
-                 ' '.join(('Calculated using data between',
-                           '{:} and {:}'.format(f107_inst.index[0],
-                                                f107_inst.index[-1])))}
-
-    f107_inst.meta[f107a_name] = meta_dict
+    f107_inst[f107a_name].attrs.update(meta_dict)
 
     return

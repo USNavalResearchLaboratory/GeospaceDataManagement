@@ -73,9 +73,9 @@ appropriate for this tag data.
 
 import datetime as dt
 import numpy as np
-import pandas as pds
 
 import GeospaceDataManagement as gdm
+from GeospaceDataManagement.instruments.methods import general
 from GeospaceDataManagement.instruments import sw_methods
 
 # ----------------------------------------------------------------------------
@@ -173,12 +173,8 @@ def load(fnames, tag='', inst_id=''):
                 meta[kk] = sw_methods.kp_ap.get_bartel_metadata(kk)
     else:
         # Load the forecast, recent, prediction, or 45day data
-        all_data = []
-        for fname in fnames:
-            result = pds.read_csv(fname, index_col=0, parse_dates=True)
-            all_data.append(result)
-
-        result = pds.concat(all_data)
+        result = general.load_csv_data(
+            fnames, {'index_col': 0, 'parse_dates': True})
         fill_val = -1
 
         # Initalize the meta data

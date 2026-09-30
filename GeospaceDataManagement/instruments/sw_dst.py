@@ -164,7 +164,7 @@ def load(fnames, tag='', inst_id=''):
                 # Prep datetime index for the data and create DataFrame
                 start = dt.datetime(yr[0], mo[0], day[0], ut[0])
                 stop = dt.datetime(yr[-1], mo[-1], day[-1], ut[-1])
-                dates = pds.date_range(start, stop, freq='H')
+                dates = pds.date_range(start, stop, freq='h')
                 new_data = pds.DataFrame(dst, index=dates, columns=['dst'])
 
                 # Add to all data loaded for filenames
@@ -172,6 +172,7 @@ def load(fnames, tag='', inst_id=''):
 
         # Combine data together
         data = pds.concat(all_data, sort=True, axis=0)
+        data.index.name = 'Epoch'
 
         # Pull out requested days
         data = data.iloc[data.index >= fdates[0], :]

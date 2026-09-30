@@ -426,6 +426,9 @@ def load_def_now(fnames):
     # Combine data together
     if len(all_data) > 0:
         data = pds.concat(all_data, axis=0, sort=True)
+
+        if data.index.name is None:
+            data.index.name = "Epoch"
     else:
         data = pds.DataFrame()
 

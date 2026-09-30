@@ -130,10 +130,12 @@ def clean(self):
     eval_cols = ecols + pcols
     eval_cols.append('anis_ind')
 
-    # Remove lines without any good data
-    good_cols = (np.isfinite(self.data.loc[:, eval_cols])).sum(axis=1)
-    bad_index = good_cols[good_cols == 0].index
-    self.data = self.data.drop(index=bad_index)
+    # Remove times without any good data
+    good_sum = np.isfinite([self.data[ecol].values for ecol in eval_cols]).sum(
+        axis=0)
+    if 0 in good_sum:
+        self.data = self.data.where(self.data['Epoch'][good_sum != 0],
+                                    drop=True)
 
     return
 
@@ -173,8 +175,9 @@ def load(fnames, tag='', inst_id=''):
     """
 
     # Save each file to the output DataFrame
-    data = load_csv_data(fnames, read_csv_kwargs={'index_col': 0,
-                                                  'parse_dates': True})
+    data = load_csv_data(fnames,
+                         read_csv_kwargs={'index_col': 0,
+                                          'parse_dates': True}).to_xarray()
 
     # Assign the meta data
     meta, status_desc = mm_ace.common_metadata()
@@ -239,8 +242,7 @@ def load(fnames, tag='', inst_id=''):
                                'fill_val': -1.0e5, 'min_val': -np.inf,
                                'max_val': np.inf}
 
-    # Convert the data to xarray and add meta data
-    data = data.to_xarray()
+    # Add the meta data
     for dvar in data.data_vars.keys():
         if dvar in meta.keys():
             data[dvar].attrs.update(meta[dvar])

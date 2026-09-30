@@ -36,7 +36,7 @@ def ensure_updated_stored_modules(modules):
         gdm.params['user_modules']
 
     """
-    # make sure filesystem was updated
+    # Make sure filesystem was updated
     saved_modules = registry.load_saved_modules()
     for module_name, platform, name in modules:
         assert platform in saved_modules
@@ -56,9 +56,8 @@ def ensure_live_registry_updated(modules):
         gdm.params['user_modules']
 
     """
-
+    # Check that the global registry was updated
     for module_name, platform, name in modules:
-        # check that global registry was updated
         assert platform in gdm.params['user_modules']
         assert name in gdm.params['user_modules'][platform]
         assert module_name in gdm.params['user_modules'][platform][name]
@@ -312,23 +311,21 @@ class TestModuleRegistration(object):
 
     def setup_method(self):
         """Set up the unit test environment for each method."""
-
+        # Define the instrument location and package name
         self.inst_module = gdm.instruments
-        # package name
         pkg_name = self.inst_module.__name__
 
-        # construct inputs similar to TestRegistration
-        # to enable use of existing methods
-        # almost fully general
+        # Construct inputs similar to TestRegistration to enable use of
+        # existing methods
         module_names = self.inst_module.__all__
-        self.names = [snip.split('gdm')[-1][1:] for snip in module_names]
-        self.platforms = ['gdm'] * len(self.names)
+        self.names = [mname.split("_")[1] for mname in module_names]
+        self.platforms = [mname.split("_")[0] for mname in module_names]
         module_strings = ['.'.join((pkg_name, name)) for name in
                           module_names]
         self.modules = [(mod, plat, nam) for mod, plat, nam in
                         zip(module_strings, self.platforms, self.names)]
 
-        # remove any existing support which may be let over
+        # Remove any existing support which may be let over
         registry.remove(self.platforms, [None] * len(self.platforms))
 
         return
@@ -342,12 +339,13 @@ class TestModuleRegistration(object):
 
     def test_module_registration_multiple(self):
         """Test registering a module containing multiple instruments."""
-
-        # register package by module
+        # Register package by module
         registry.register_by_module(self.inst_module)
-        # check that global registry was updated
+
+        # Check that that global registry was updated
         ensure_live_registry_updated(self.modules)
-        # verify update on disk
+
+        # Verify the update on disk
         ensure_updated_stored_modules(self.modules)
 
         return

@@ -125,9 +125,11 @@ def clean(self):
     eval_cols = ['int_pflux_10MeV', 'int_pflux_30MeV']
 
     # Remove lines without any good data
-    good_cols = (np.isfinite(self.data.loc[:, eval_cols])).sum(axis=1)
-    bad_index = good_cols[good_cols == 0].index
-    self.data = self.data.drop(index=bad_index)
+    good_sum = np.isfinite([self.data[ecol].values for ecol in eval_cols]).sum(
+        axis=0)
+    if 0 in good_sum:
+        self.data = self.data.where(self.data['Epoch'][good_sum != 0],
+                                    drop=True)
 
     return
 

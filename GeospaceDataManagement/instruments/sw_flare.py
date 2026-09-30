@@ -203,7 +203,7 @@ def load(fnames, tag='', inst_id=''):
     elif tag == 'prediction':
         for dkey in data:
             if dkey.find('Region') < 0:
-                data[dkey].attrs.udpate(
+                data[dkey].attrs.update(
                     {'units': '', 'name': dkey, 'notes': '',
                      'desc': ''.join([dkey.replace('_', ' '),
                                       ' Probabilities']), 'fill_val': -1,

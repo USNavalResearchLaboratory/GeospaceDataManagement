@@ -78,7 +78,7 @@ def init(self):
 
 
 def clean(self):
-    """Clean the Kp, not required for this index (empty function)."""
+    """Clean the apo, not required for this index (empty function)."""
 
     return
 
@@ -116,7 +116,7 @@ def load(fnames, tag='', inst_id=''):
     result = sw_methods.gfz.load_def_now(fnames).to_xarray()
 
     # Initalize the meta data
-    dkey = 'Hp{:s}'.format(inst_id.split('min')[0])
+    dkey = 'ap{:s}'.format(inst_id.split('min')[0])
     result[dkey].attrs.update({
         'units': '', 'name': dkey,
         'desc': "{:s}ourly Planetary Open linear index".format(
