@@ -28,11 +28,13 @@ jobs:
             xarray_ver: "2024.5.0"
             os: ubuntu-latest
             test_config: "SPEC0000"
+	    options: "standard"
           # Operational compliance settings
           - python-version: "3.12"
             numpy_ver: "2.0.0"
             os: "ubuntu-22.04"
             test_config: "Ops"
+	    options: "space_weather"
           # Minimum version settings
           - python-version: "3.10"
             dask_ver: "2022.12.1"
@@ -46,6 +48,7 @@ jobs:
             xarray_ver: "2022.12.0"
             os: "ubuntu-22.04"
             test_config: "Min"
+	    options: "standard"
     name: Python ${{ matrix.python-version }} on ${{ matrix.os }} with numpy ${{ matrix.numpy_ver }} for ${{ matrix.options }}
     runs-on: ${{ matrix.os }}
     steps:
