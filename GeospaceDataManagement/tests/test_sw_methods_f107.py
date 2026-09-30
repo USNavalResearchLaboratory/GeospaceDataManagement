@@ -15,8 +15,8 @@
 
 import datetime as dt
 import numpy as np
-import pytest
 import pandas as pds
+import pytest
 import xarray as xr
 
 import GeospaceDataManagement as gdm

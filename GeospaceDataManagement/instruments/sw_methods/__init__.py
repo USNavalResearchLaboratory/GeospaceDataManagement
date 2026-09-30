@@ -1,3 +1,5 @@
+"""Imports for the Space Weather instrument methods."""
+
 try:
     from GeospaceDataManagement.instruments.sw_methods import ace  # noqa F401
     from GeospaceDataManagement.instruments.sw_methods import auroral_electrojet  # noqa F401

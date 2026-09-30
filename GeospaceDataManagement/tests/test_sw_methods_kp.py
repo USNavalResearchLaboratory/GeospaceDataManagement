@@ -20,8 +20,8 @@ import pytest
 
 import GeospaceDataManagement as gdm
 try:
-    from GeospaceDataManagement.instruments.sw_methods import kp_ap
     from GeospaceDataManagement.instruments import sw_kp
+    from GeospaceDataManagement.instruments.sw_methods import kp_ap
     no_sw = False
 except ImportError:
     no_sw = True

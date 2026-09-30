@@ -15,8 +15,8 @@
 """Unit tests for the general instrument methods."""
 
 import datetime as dt
-from os import path
 import numpy as np
+from os import path
 import pandas as pds
 import pytest
 

@@ -28,10 +28,8 @@ import pandas as pds
 import pytest
 
 import GeospaceDataManagement as gdm
-from GeospaceDataManagement.utils import generate_instrument_list
 import GeospaceDataManagement.tests.classes.cls_instrument_library as clslib
-from GeospaceDataManagement.tests.classes.cls_instrument_library import \
-    InstLibTests
+from GeospaceDataManagement.utils import generate_instrument_list
 
 # Optional code to pass through user and password info to test instruments
 # dict, keyed by the Instrument, with a list of usernames and passwords
@@ -50,7 +48,7 @@ instruments = clslib.InstLibTests.initialize_test_package(
 no_sw = False if len(sw_instruments['names']) > 0 else True
 
 
-class TestInstruments(InstLibTests):
+class TestInstruments(clslib.InstLibTests):
     """Main class for instrument tests.
 
     Notes
@@ -60,6 +58,7 @@ class TestInstruments(InstLibTests):
     once, all groups of instruments must be tested in this class
 
     """
+
     # Tests specifically for the GeospaceDataMangement test instruments
     @pytest.mark.parametrize("inst_dict", test_instruments['download'])
     @pytest.mark.parametrize("kwarg,output", [(None, 0.0),

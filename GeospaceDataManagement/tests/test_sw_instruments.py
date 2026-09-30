@@ -29,8 +29,8 @@ import tempfile
 
 # Import the instrument package and test classes
 import GeospaceDataManagement as gdm
-from GeospaceDataManagement.utils import generate_instrument_list
 import GeospaceDataManagement.tests.classes.cls_instrument_library as clslib
+from GeospaceDataManagement.utils import generate_instrument_list
 from GeospaceDataManagement.utils import testing
 
 
