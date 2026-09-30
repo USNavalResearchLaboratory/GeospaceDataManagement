@@ -295,7 +295,13 @@ def create_datetime_index(year=None, month=None, day=None, uts=None):
 
     Returns
     -------
-        Pandas timeseries index.
+    index : pds.DatetimeIndex
+        Pandas timeseries index
+
+    Raises
+    ------
+    ValueError
+        If provided inputs are incorrectly formatted
 
     Notes
     -----
