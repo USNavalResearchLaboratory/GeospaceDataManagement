@@ -965,8 +965,9 @@ class Instrument(object):
             for keyname in key:
                 self.data[keyname] = in_data[keyname]
 
-        # Attach meta data
-        self.data[key].attrs.update(new)
+        # Attach meta data, if it exists
+        if len(new) > 0:
+            self.data[key].attrs.update(new)
 
         return
 
