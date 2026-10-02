@@ -897,7 +897,7 @@ class Instrument(object):
 
                 try:
                     self.data[var_key].loc[sel_dict] = in_data
-                except (KeyError, IndexError, TypeError):
+                except (ValueError, KeyError, IndexError, TypeError):
                     # Input is probably an integer, get the desired data
                     # through array assignment.  Because the original behaviour
                     # used indices for each dimension instead of paired indices,
