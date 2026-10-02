@@ -24,7 +24,7 @@ compare the results to OMNI.
                         tag='historic', update_files=True)
 
    # Add the OMNI conversion routine to the ACE instrument
-   ace.custom_attach(gdn.instruments.methods.ace.ace_swepam_hourly_omni_norm)
+   ace.custom_attach(gdm.instruments.methods.ace.ace_swepam_hourly_omni_norm)
 
    # Pick a day with a geomagnetic storm
    stime = dt.datetime(2014, 3, 26)

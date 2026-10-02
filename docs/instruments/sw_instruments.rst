@@ -3,7 +3,7 @@
 Space Weather Instruments
 =========================
 
-These :py:class:`~GeospaceDataManager._instruments.Instrument` modules are
+These :py:class:`~GeospaceDataManagement._instruments.Instrument` modules are
 made available with the 'space_weather' installation option.
 
 .. _ace-inst:

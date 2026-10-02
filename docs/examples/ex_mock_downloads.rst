@@ -4,13 +4,13 @@ Mock downloads
 ==============
 
 The space weather instruments all allow
-:py:class:`~GeospaceDataManagemennt._instrument.Instrument` downloads to
+:py:class:`~GeospaceDataManagement._instrument.Instrument` downloads to
 "download" data from a local directory. This allows the user to have full
 control over the remote access, while still allowing
-:py:mod:`GeospaceDataManagemennt` to handle the data extraction and file
+:py:mod:`GeospaceDataManagement` to handle the data extraction and file
 handling.
 
-When using the mock-download option, :py:mod:`GeospaceDataManagemennt` requires
+When using the mock-download option, :py:mod:`GeospaceDataManagement` requires
 that you specify the local directory where you have stored the desired data
 files. If you don't employ this option, downloads will be attempted from the
 remote source. If you do employ this option and the directory is wrong, and
