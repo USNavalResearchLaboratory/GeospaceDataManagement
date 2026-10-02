@@ -1,3 +1,5 @@
+[![Pytest with Flake8](https://github.com/USNavalResearchLaboratory/GeospaceDataManagement/actions/workflows/main.yml/badge.svg)](https://github.com/USNavalResearchLaboratory/GeospaceDataManagement/actions/workflows/main.yml) [![Coverage Status](https://coveralls.io/repos/github/USNavalResearchLaboratory/GeospaceDataManagement/badge.svg)](https://coveralls.io/github/USNavalResearchLaboratory/GeospaceDataManagement)
+
 GeospaceDataManagement provides a simple and flexible interface for robust data
 analysis from beginning to end - with a focus on downloading, loading, cleaning
 and managing scientific data.  The project's plug-in design allows analysis

@@ -8,3 +8,4 @@ Instruments
 
    instruments/general_instruments.rst
    instruments/testing_instruments.rst
+   instruments/sw_instruments.rst

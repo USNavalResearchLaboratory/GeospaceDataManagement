@@ -13,6 +13,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
     a variable did not exist
 * DOC:
   - Added missing sections to docstrings
+  - Added information about space weather instruments and methods
 
 [0.0.1] - 2026-09-25
 --------------------
