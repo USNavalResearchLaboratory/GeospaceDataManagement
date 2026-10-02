@@ -226,6 +226,7 @@ class TestInstruments(clslib.InstLibTests):
 
     # Tests specifically for the Space Weather instruments
     @pytest.mark.skipif(no_sw, reason="Space Weather test only")
+    @pytest.mark.second
     def test_45day_forecast_data_length(self):
         """Test that the downloaded 45-day forecasts load 45 days of data."""
         # Initalize the desired instrument parameters
