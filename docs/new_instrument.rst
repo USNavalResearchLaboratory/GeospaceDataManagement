@@ -36,9 +36,9 @@ syntax:
   import my_package
   registry.register_from_module(my_package.instruments)
 
-After registry the instrument module name is stored in the user's home
-directory in a hidden directory named :code:`~.GeospaceDataManagement`. The
-instrument may then be instantiated with the instrument's platform and name:
+After registry the instrument module name is stored in the user's home directory
+in a hidden directory named :code:`~/.gdm`. The instrument may then be
+instantiated with the instrument's platform and name:
 
 .. code-block:: python
 

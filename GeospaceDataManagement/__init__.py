@@ -1,4 +1,4 @@
-"""GeospaceDataManagement
+"""GeospaceDataManagement (a.k.a. gdm).
 
 A package providing a simple and flexible interface for
 downloading, loading, cleaning, and managing scientific measurements.
@@ -43,15 +43,9 @@ home_dir = os.path.expanduser('~')
 gdm_dir = os.path.join(home_dir, '.gdm')
 
 # Set directory for test data
-if resources is None:
-    test_data_path = os.path.join(os.path.realpath(os.path.dirname(__file__)),
-                                  'tests', 'test_data')
-    citation = os.path.join(os.path.realpath(os.path.dirname(__file__)),
-                            'citation.txt')
-else:
-    test_data_path = str(resources.files(__package__).joinpath('tests',
-                                                               'test_data'))
-    citation = str(resources.files(__package__).joinpath('citation.txt'))
+test_data_path = str(resources.files(__package__).joinpath('tests',
+                                                           'test_data'))
+citation = str(resources.files(__package__).joinpath('citation.txt'))
 
 # Create a .gdm directory or parameters file if one doesn't exist.
 settings_file = os.path.join(gdm_dir, 'gdm_settings.json')

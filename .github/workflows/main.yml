@@ -16,6 +16,7 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "windows-latest", "macos-latest"]
         python-version: ["3.10", "3.11", "3.13", "3.14"]
+        options: ["standard", "space_weather"]
         numpy_ver: ["latest"]
         test_config: ["latest"]
         include:
@@ -27,11 +28,13 @@ jobs:
             xarray_ver: "2024.5.0"
             os: ubuntu-latest
             test_config: "SPEC0000"
+            options: "standard"
           # Operational compliance settings
           - python-version: "3.12"
             numpy_ver: "2.0.0"
             os: "ubuntu-22.04"
             test_config: "Ops"
+            options: "space_weather"
           # Minimum version settings
           - python-version: "3.10"
             dask_ver: "2022.12.1"
@@ -45,7 +48,8 @@ jobs:
             xarray_ver: "2022.12.0"
             os: "ubuntu-22.04"
             test_config: "Min"
-    name: Python ${{ matrix.python-version }} on ${{ matrix.os }} with numpy ${{ matrix.numpy_ver }}
+            options: "standard"
+    name: Python ${{ matrix.python-version }} on ${{ matrix.os }} with numpy ${{ matrix.numpy_ver }} for ${{ matrix.options }}
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v6
@@ -87,10 +91,14 @@ jobs:
       if: ${{ matrix.test_config == 'latest'}}
       run: pip install .[test]
 
+    - name: Install extra dependencies
+      if: ${{ !startsWith(matrix.options, 'standard') }}
+      run: pip install .[${{ matrix.options }}]
+
     - name: Set up the data directory
       run: |
         mkdir gdmData
-        python -c "import GeospaceDataManagement; GeospaceDataManagement.params['data_dirs'] = 'gdmData'"
+        python -c "import GeospaceDataManagement; GeospaceDataManagement.params['data_dirs'] = 'gdmData'; print(GeospaceDataManagement.params)"
 
     - name: Test PEP8 compliance
       run: flake8 . --count --select=D,E,F,H,W --show-source --statistics

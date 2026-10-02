@@ -1,10 +1,7 @@
-.. pysat documentation main file, created by
-   sphinx-quickstart on Thu Apr 23 23:07:56 2015.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. gdm documentation main file
 
-Welcome to pysat's documentation!
-=================================
+Welcome to the GeospaceDataManagement documentation
+===================================================
 
 .. toctree::
    :maxdepth: 2
@@ -15,6 +12,7 @@ Welcome to pysat's documentation!
    installation.rst
    quickstart.rst
    tutorial.rst
+   examples.rst
    instruments.rst
    new_instrument.rst
    dependency.rst

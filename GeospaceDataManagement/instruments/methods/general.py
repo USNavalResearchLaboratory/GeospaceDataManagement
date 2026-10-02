@@ -4,6 +4,7 @@
 #
 # ----------------------------------------------------------------------------
 # Original Authors: pysat development team (c) 2016, Russell Stoneback
+# Original Authors: pysat development team, (c) 2020 pysat
 #
 # Modified 2026+
 # This is a U.S. government work and not under copyright protection in the U.S.
@@ -270,3 +271,35 @@ def load_csv_data(fnames, read_csv_kwargs=None):
             data.index.name = "Epoch"
 
     return data
+
+
+def is_fill_val(data, fill_val):
+    """Evaluate whether or not a value is a fill value.
+
+    Parameters
+    ----------
+    data : int, float, or str
+        Data value
+    fill_val : int, float, or str
+        Fill value
+
+    Returns
+    -------
+    is_fill : bool
+        True if the data is equal to the fill value, False if it is not.
+
+    """
+
+    try:
+        # NaN and finite evaluation will fail for non-numeric types
+        if np.isnan(fill_val):
+            is_fill = np.isnan(data)
+        elif np.isfinite(fill_val):
+            is_fill = data == fill_val
+        else:
+            is_fill = ~np.isfinite(data)
+    except TypeError:
+        # Use equality for string and similar types
+        is_fill = data == fill_val
+
+    return is_fill

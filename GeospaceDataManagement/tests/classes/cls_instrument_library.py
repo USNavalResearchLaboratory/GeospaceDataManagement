@@ -218,7 +218,8 @@ class InstLibTests(object):
 
         return
 
-    def initialize_test_package(self, inst_loc, user_info=None):
+    def initialize_test_package(self, inst_loc, inst_subset='test',
+                                user_info=None):
         """Generate custom instrument lists for each category of tests.
 
         Parameters
@@ -226,6 +227,9 @@ class InstLibTests(object):
         inst_loc : python subpackage
             The location of the instrument subpackage to test, e.g.,
             `gdm.instruments`
+        inst_subset : str
+            Name within hidden attribute that contains the list of desired
+            instruments (default='test')
         user_info : dict or NoneType
             Nested dictionary with user and password info for instrument module
             name.  If None, no user or password is assumed. (default=None)
@@ -247,7 +251,8 @@ class InstLibTests(object):
 
         # Find all instruments for testing from user-specified location.
         instruments = generate_instrument_list(inst_loc=inst_loc,
-                                               user_info=user_info)
+                                               user_info=user_info,
+                                               subset=inst_subset)
 
         # Find all methods in the standard test class.
         method_list = [func for func in dir(self)
@@ -473,13 +478,13 @@ class InstLibTests(object):
 
         # Check the empty status
         assert self.test_inst.empty, "Data was loaded for a far-future time"
-        assert self.test_inst.data.dims == xr.Dataset().dims, "Dims not empty"
+        assert self.test_inst.data.sizes == xr.Dataset().sizes, "Dims not empty"
         assert (self.test_inst.data.data_vars
                 == xr.Dataset().data_vars), "Data variables not empty"
 
         return
 
-    # TODO(#1172): remove mark.new_tests at v3.3.0
+    # TODO(#2): remove mark.new_tests at v0.1.0
     @pytest.mark.second
     @pytest.mark.load_options
     @pytest.mark.new_tests

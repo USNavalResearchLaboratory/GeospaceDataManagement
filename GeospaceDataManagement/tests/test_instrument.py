@@ -325,13 +325,21 @@ class TestBasicsNDXarray(TestBasics):
 
         """
 
+        # Create a new 2D data variable
         self.testInst.load(self.ref_time.year, self.ref_doy)
         self.testInst['doubleProfile'] = 2. * self.testInst['profiles']
-        self.testInst[changed, changed, 'doubleProfile'] = 0
-        assert np.all(np.all(self.testInst[fixed, fixed, 'doubleProfile']
-                             == 2. * self.testInst[fixed, 'profiles']))
-        assert np.all(np.all(self.testInst[changed, changed, 'doubleProfile']
-                             == 0))
+
+        # Ensure all the values are positive, so that we don't accidentally pass
+        assert np.all(np.sign(self.testInst['doubleProfile'].values) >= 0), \
+            'Re-asses assigment value in this test to ensure robustness'
+
+        # Re-assign some values to negative and evaluate the assignment
+        fill_val = -47
+        self.testInst[changed, changed, 'doubleProfile'] = fill_val
+        assert np.all(self.testInst[fixed, 'doubleProfile'].values
+                      == 2. * self.testInst[fixed, 'profiles'].values).all()
+        assert np.all(self.testInst[changed, changed, 'doubleProfile'].values
+                      == fill_val).all()
         return
 
     @pytest.mark.parametrize("data,target",

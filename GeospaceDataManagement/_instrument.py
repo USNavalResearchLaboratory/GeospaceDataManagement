@@ -834,6 +834,11 @@ class Instrument(object):
             # Simple assignment
             inst['name'] = newData
 
+            # Assignment with Metadata
+            inst['name'] = {'data':new_data,
+                            'long_name':long_name,
+                            'units':units}
+
         Raises
         ------
         ValueError
@@ -846,7 +851,6 @@ class Instrument(object):
         If a single new value is set, the value will be broadcast over time.
 
         """
-
         new = copy.deepcopy(new_data)
 
         # xarray format chosen for Instrument object
@@ -885,9 +889,27 @@ class Instrument(object):
                 # Try loading as values
                 self.data[var_key].loc[indict] = in_data
             except (TypeError, KeyError, IndexError):
-                # Original code
-                # Try loading indexed as integers
-                self.data[key[-1]][indict] = in_data
+                # Attempt to use loc, which will currently fail for Python 3.14
+                sel_dict = {
+                    self.data[var_key].dims[i]: self.data[var_key][
+                        self.data[var_key].dims[i]].values[kind]
+                    for i, kind in enumerate(ind_keys)}
+
+                try:
+                    self.data[var_key].loc[sel_dict] = in_data
+                except (ValueError, KeyError, IndexError, TypeError):
+                    # Input is probably an integer, get the desired data
+                    # through array assignment.  Because the original behaviour
+                    # used indices for each dimension instead of paired indices,
+                    # we invoke meshgrid to get the full range of index
+                    # combinations
+                    sel_dat = self.data[var_key].values.copy()
+                    sel_ind = np.meshgrid(ind_keys)
+                    sel_dat[sel_ind] = in_data
+                    self.data[var_key].values = sel_dat
+
+            # Finish updating by adding meta data
+            self.data[var_key].attrs.update(new)
 
             return
         elif isinstance(key, str):
@@ -956,6 +978,10 @@ class Instrument(object):
             # individually.
             for keyname in key:
                 self.data[keyname] = in_data[keyname]
+
+        # Attach meta data, if it exists
+        if len(new) > 0:
+            self.data[key].attrs.update(new)
 
         return
 
@@ -1191,13 +1217,13 @@ class Instrument(object):
 
         Notes
         -----
-        methods
+        methods include:
             init, preprocess, and clean
-        functions
+        functions include:
             load, list_files, download, and list_remote_files, concat_data
-        attributes
+        attributes include:
             directory_format, file_format, and multi_file_day
-        test attributes
+        test attributes include:
             _test_download, _test_download_ci, _new_tests, and _password_req
 
         """
@@ -1608,7 +1634,7 @@ class Instrument(object):
                          np.dtypes.StringDType, np.dtypes.BytesDType,
                          pds.StringDtype]
         except AttributeError:
-            # TODO(#1227) np.dtypes not introduced until somewhere around
+            # TODO(#1) np.dtypes not introduced until somewhere around
             #  numpy version 1.25
             str_types = [str, np.str_, np.bytes_, pds.StringDtype]
 

@@ -291,7 +291,7 @@ def fmt_output_in_cols(out_strs, ncols=3, max_num=6, lpad=None):
     return output
 
 
-def generate_instrument_list(inst_loc, user_info=None):
+def generate_instrument_list(inst_loc, user_info=None, subset="all"):
     """Iterate through and classify instruments in a given subpackage.
 
     Parameters
@@ -303,6 +303,8 @@ def generate_instrument_list(inst_loc, user_info=None):
         Nested dictionary with user and password info for instrument module
         name.  If None, no user or password is assumed. (default=None)
         EX: user_info = {'jro_isr': {'user': 'myname', 'password': 'email'}}
+    subset : str
+        Specify a subset of the instruments include (default='all')
 
     Returns
     -------
@@ -324,7 +326,13 @@ def generate_instrument_list(inst_loc, user_info=None):
 
     """
 
-    instrument_names = inst_loc.__all__
+    subset_attr = "__{:s}__".format(subset)
+    if not hasattr(inst_loc, subset_attr):
+        gdm.logger.critical('unknown subset of Instruments: {:}'.format(subset))
+        instrument_names = []
+    else:
+        instrument_names = getattr(inst_loc, subset_attr)
+
     instrument_download = []
     instrument_optional_load = []
     instrument_no_download = []

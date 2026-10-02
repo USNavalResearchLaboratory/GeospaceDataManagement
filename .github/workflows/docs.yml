@@ -37,7 +37,7 @@ jobs:
     - name: Check documentation links
       run: sphinx-build -b linkcheck docs dist/docs
 
-      - name: Validate the CITATION.cff
-        uses: citation-file-format/cffconvert-github-action@2.0.0
-        with:
-          args: "--infile ./CITATION.cff --validate"
+    - name: Validate the CITATION.cff
+      uses: citation-file-format/cffconvert-github-action@2.0.0
+      with:
+        args: "--infile ./CITATION.cff --validate"

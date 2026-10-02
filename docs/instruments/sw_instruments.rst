@@ -1,0 +1,446 @@
+.. _instruments-sw:
+
+Space Weather Instruments
+=========================
+
+These :py:class:`~GeospaceDataManagement._instruments.Instrument` modules are
+made available with the 'space_weather' installation option.
+
+.. _ace-inst:
+
+ACE
+---
+
+The Space Weather Prediction Center (SWPC) provides several Advanced
+Composition Explorer (ACE) instrument data sets for use as real-time and
+historic measurements of the solar wind.  This differs from the ACE scientific
+data, which is available at a greater latency from
+`CDAWeb <https://cdaweb.gsfc.nasa.gov/index.html/>`_. Information about these
+data sets can be found at the `SWPC ACE Solar-Wind page
+<https://www.swpc.noaa.gov/products/ace-real-time-solar-wind>`_.
+
+
+.. _ace-epam-inst:
+
+ACE EPAM
+^^^^^^^^
+
+EPAM is the Electron, Proton, and Alpha Monitor onboard ACE.
+
+
+.. automodule:: GeospaceDataManagement.instruments.ace_epam
+   :members:
+
+
+.. _ace-mag-inst:
+
+ACE MAG
+^^^^^^^
+
+Supports ACE Magnetometer data.
+
+
+.. automodule:: GeospaceDataManagement.instruments.ace_mag
+   :members:
+
+
+.. _ace-sis-inst:
+
+ACE SIS
+^^^^^^^
+
+Supports ACE Solar Isotope Spectrometer data.
+
+
+.. automodule:: GeospaceDataManagement.instruments.ace_sis
+   :members:
+
+
+.. _ace-swepam-inst:
+
+ACE SWEPAM
+^^^^^^^^^^
+
+Supports ACE Solar Wind Electron Proton Alpha Monitor data.
+
+
+.. automodule:: GeospaceDataManagement.instruments.ace_swepam
+   :members:
+
+
+.. _norp-inst:
+
+NoRP
+----
+
+The Nobeyama Radio Polarameters (NoRP) platform encompasses solar flux
+measurements provided by the Japanese Solar Science Observatory.
+`NoRP <https://solar.nro.nao.ac.jp/norp/index.html>`_ provides
+additional information and processing tools on their website.
+
+.. _norp-rf-inst:
+
+RF
+^^^
+
+RF is the radio flux measured from the sun at different wavelengths.  This
+provides a different measure of solar activity and has been corrected to be
+in solar flux units at 1 AU.  The daily data set currently starts in Nov 1951
+and is updated to extend to the current period, but not in real-time.
+
+
+.. automodule:: GeospaceDataManagement.instruments.norp_rf
+   :members:
+
+
+.. _sw-inst:
+
+SW
+---
+
+The Space Weather (SW) platform encompasses space weather indices that may be
+found across a variety of platforms.  Many of the remote centers that provide
+these data sets include multiple types of data in each file.  From
+:py:mod:`GeospaceDataManagement` version 0.1.0, the remote information is separated
+by :py:class:`pysat.Instrument` and saved into appropriate files.  For example,
+the definitive Kp data from the German Research Centre for Geosciences at
+Potsdam (GFZ) will also download Ap and Cp data files.
+
+.. _sw-ae-inst:
+
+AE
+^^^
+
+AE is an auroral electrojet index that reflects the level of magnetic deflection
+in the auroral zone due to the difference between the eastward and westward
+electroject currents at Earth.  Real-time predictions (last 96 hours) are
+provided by
+`LASP <https://lasp.colorado.edu/space_weather/dsttemerin/dsttemerin.html>`_.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_ae
+   :members:
+
+
+.. _sw-al-inst:
+
+
+AL
+^^^
+
+AL is an auroral electrojet index that reflects the lower envelope, the negative
+peak of the electroject currents at Earth.  Real-time predictions (last 96
+hours) are provided by the
+`LASP repository <https://lasp.colorado.edu/space_weather/dsttemerin/dsttemerin.html>`_.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_al
+   :members:
+
+
+.. _sw-au-inst:
+
+
+AU
+^^^
+
+AU is an auroral electrojet index that reflects the upper envelope, the positive
+peak of the electroject currents at Earth.  Real-time predictions (last 96
+hours) are provided at the
+`LASP page <https://lasp.colorado.edu/space_weather/dsttemerin/dsttemerin.html>`_.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_au
+   :members:
+
+
+.. _sw-ap-inst:
+
+Ap
+^^^
+
+Ap is a geomagnetic index that reflects the magnitude of geomagnetic
+disturbances at Earth but unlike Kp uses a linear scale.  Historic, recent
+(last 30 days), and forecasted values are available from the
+`GFZ Kp <https://kp.gfz.de/en/>`_ and the
+`SWPC Forecasts page <https://www.swpc.noaa.gov/forecasts>`_.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_ap
+   :members:
+
+
+.. _sw-apo-inst:
+
+apo
+^^^
+
+apo is a linear (half)-hourly, planetary, open-ended, geomagnetic index that
+reflects the magnitude of geomagnetic disturbances at Earth. It is like Ap but
+does not have an upper limit. Values from 1995 onwards are available from the
+`GFZ Hpo page <https://kp.gfz.de/en/hp30-hp60>`_.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_apo
+   :members:
+
+
+.. _sw-cp-inst:
+
+Cp
+^^^
+
+Cp is a derivative geomagnetic index that provides a qualitative estimate of the
+overall level of magnetic activity for the day.  The C9 index provides the same
+information on a scale from 0-9 instead of 0.0-2.5. Historic values are
+available from the `GFZ Kp page <https://kp.gfz.de/en/>`_.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_cp
+   :members:
+
+
+.. _sw-dst-inst:
+
+Dst
+^^^
+
+The Disturbance Storm Time (Dst) Index is a measure of magnetic activity
+associated with the ring current.  The National Centers for Environmental
+Information (NCEI), formerly the National Geophysical Data Center (NGDC),
+maintains the current database from which the historic Dst is downloaded.
+`LASP <https://lasp.colorado.edu/space_weather/dsttemerin/dsttemerin.html>`_
+performs the calculations and provides the predicted Dst for the last 96 hours.
+You can learn more about the Dst Index at the
+`WDC Kyoto Observatory page <http://wdc.kugi.kyoto-u.ac.jp/dstdir/index.html>`_.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_dst
+   :members:
+
+
+.. _sw-f107-inst:
+
+F \ :sub:`10.7`\
+^^^^^^^^^^^^^^^^
+
+F \ :sub:`10.7`\  is the 10.7 cm radio solar flux (measured in solar flux units,
+sfu) `[Cortie 1912] <http://adsabs.harvard.edu/full/1912MNRAS..73...52C>`_.
+Historic indices, real-time indices, and forecasted indices are available from
+the
+`LASP F107 <https://lasp.colorado.edu/lisird/data/noaa_radio_flux/>`_ and the
+`SWPC F107 page <https://www.swpc.noaa.gov/phenomena/f107-cm-radio-emissions>`_.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_f107
+   :members:
+
+
+.. _sw-flare-inst:
+
+Solar Flares
+^^^^^^^^^^^^
+
+Solar flares have been monitored for decades and the data has been compiled
+into standard measurements from different data sets. Historic indices,
+real-time indices, and forecasted indices are available from
+`SWPC <https://www.swpc.noaa.gov/phenomena>`_.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_flare
+   :members:
+
+
+.. _sw-hpo-inst:
+
+Hpo
+^^^
+
+Hpo is a (half)-Hourly, planetary, open-ended, geomagnetic index that
+reflects the magnitude of geomagnetic disturbances at Earth. It is like Kp but
+does not have an upper limit. Values from 1995 onwards are available from the
+`GFZ Hp30 and Hp60 page <https://kp.gfz.de/en/hp30-hp60>`_.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_hpo
+   :members:
+
+
+
+.. _sw-kp-inst:
+
+Kp
+^^^
+
+Kp is a geomagnetic index that reflects the magnitude of geomagnetic
+disturbances at Earth.  Historic, recent (last 30 days), and forecasted values
+are available from the
+`GFZ Kp repository <https://www.gfz-potsdam.de/en/kp-index/>`_, and the
+`SWPC Kp page <https://www.swpc.noaa.gov/products/planetary-k-index>`_.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_kp
+   :members:
+
+
+.. _mgii-inst:
+
+MgII Core-to-Wing Ratio
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The core-to-wing ratio of the solar MgII line is a proxy for solar chromospheric
+variability.  It has been used to extract a precise measurement of solar
+activity at Earth.  The two data sets provided by LASP together provide index
+values from 1978 through 2020.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_mgii
+   :members:
+
+.. _sw-pc-inst:
+
+Polar Cap
+^^^^^^^^^
+
+Polar cap indices have been developed to provide information about high-latitude
+conditions and inform ionospheric space weather models. Currently, this
+:py:class:`~pysat._instrument.Instrument` provides absorption predictions from SWPC.
+
+.. automodule:: GeospaceDataManagement.instruments.sw_polarcap
+   :members:
+
+
+.. _sw-sbfield-inst:
+
+Solar Magnetic Field
+^^^^^^^^^^^^^^^^^^^^
+
+The solar mean field provides a measure of of mean solar magnetic field using
+full-disk optical observations of the iron line.  The first observations were
+made at Stanford by
+`Scherrer et al. <https://link.springer.com/article/10.1007/BF00159925>`_.
+
+.. automodule:: GeospaceDataManagement.instruments.sw_sbfield
+   :members:
+
+
+.. _sw-ssn-inst:
+
+Sunspot Number
+^^^^^^^^^^^^^^
+
+The Sunspot Number (SSN) is one of the oldest continuously measured solar
+indices. Currently, this Instrument provides preliminary and daily values from
+SWPC (for example, here is the
+`forecast page <https://www.swpc.noaa.gov/products/predicted-sunspot-number-and-radio-flux>`_).
+
+.. automodule:: GeospaceDataManagement.instruments.sw_ssn
+   :members:
+
+
+.. _sw-stormprob-inst:
+
+Storm Probability
+^^^^^^^^^^^^^^^^^
+
+Geomagnetic storm predictions are provided by SWPC for global, high-latitude,
+and mid-latitude regions. SWPC uses the
+`NOAA SW scales <https://www.swpc.noaa.gov/noaa-scales-explanation>`_, which
+are explained here.
+
+.. automodule:: GeospaceDataManagement.instruments.sw_stormprob
+   :members:
+
+
+.. _sw-methods:
+
+Methods
+-------
+
+Several methods exist to help combine multiple data sets and convert between
+equivalent indices.  Most of these directly support the Instrument sub-modules,
+but others contain useful tools for manipulating specific data sets.
+
+ACE Methods
+^^^^^^^^^^^
+
+Supports the ACE instrument by providing reference and acknowledgement
+information.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_methods.ace
+   :members:
+
+Dst Methods
+^^^^^^^^^^^
+
+Supports the Dst ring current index by providing reference and acknowledgement
+information.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_methods.dst
+   :members:
+
+F \ :sub:`10.7`\ Methods
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Supports the F \ :sub:`10.7`\  radio flux by providing reference and
+acknowledgement information as well as a routine to combine
+F \ :sub:`10.7`\  data obtained from multiple sources.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_methods.f107
+   :members:
+
+
+Space Weather General Methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+General functions that are useful across the Space Weather Instruments.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_methods.general
+   :members:
+
+
+GFZ Methods
+^^^^^^^^^^^
+
+Supports the German Research Centre for Geosciences at Potsdam (GFZ) data
+products.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_methods.gfz
+   :members:
+
+
+Kp and Ap Methods
+^^^^^^^^^^^^^^^^^
+
+Supports the Kp instrument by providing reference and acknowledgement
+information, a routine to combine Kp from multiple sources, routines to convert
+between Kp and Ap, and a routine that uses Kp data as a geomagnetic activity
+filter for other data sets.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_methods.kp_ap
+   :members:
+
+LISIRD Methods
+^^^^^^^^^^^^^^
+
+Contains functions to support LASP Interactive Solar IRradiance Datacenter
+(LISIRD) data sets and downloads.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_methods.lisird
+   :members:
+
+SWPC Methods
+^^^^^^^^^^^^
+
+Supports the Space Weather Prediction Center (SWPC) data products.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_methods.swpc
+   :members:

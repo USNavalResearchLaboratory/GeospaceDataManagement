@@ -29,6 +29,9 @@ from GeospaceDataManagement.tests.classes.cls_ci import CICleanSetup
 from GeospaceDataManagement.utils import files as futils
 from GeospaceDataManagement.utils import testing
 
+# TODO(#6): update to use alternate package instruments when one exists.
+no_alt_package = True
+
 
 class TestConstructSearchstring(object):
     """Unit tests for the `construct_searchstring_from_format` function."""
@@ -550,15 +553,15 @@ class TestProcessParsedFilenames(object):
         return
 
 
+@pytest.mark.skipif(no_alt_package, reason="Test for alterate dir structure")
 class TestFileDirectoryTranslations(CICleanSetup):
     """Unit tests for file directory setup."""
 
     def setup_method(self):
         """Set up the unit test environment for each method."""
 
-        # Module is only required for testing installations on CI servers
-        import pysatSpaceWeather
-
+        # TODO(#6): update to use alternate package instruments when one
+        # exists.
         # Create clean environment on the CI server
         CICleanSetup.setup_method(self)
         reload(gdm)
@@ -570,24 +573,28 @@ class TestFileDirectoryTranslations(CICleanSetup):
         # Create several gdm.SpaceWeather instruments and download data.
         # We want to start with a setup that covers general cases a user may
         # have.
-        gdm.utils.registry.register_by_module(pysatSpaceWeather.instruments)
+        gdm.utils.registry.register_by_module(gdm.instruments)
 
         self.insts = []
         self.insts_dates = []
         self.insts_kwargs = []
 
+        # TODO(#6): update to use alternate package instruments when one
+        # exists.
         # Data by day, ACE SIS data
         self.insts.append(gdm.Instrument('ace', 'sis', tag='historic'))
-        test_dates = pysatSpaceWeather.instruments.ace_sis._test_dates
-        self.insts_dates.append([test_dates['']['historic']] * 2)
+        # test_dates = ace_sis._test_dates
+        # self.insts_dates.append([test_dates['']['historic']] * 2)
         self.insts_kwargs.append({})
 
+        # TODO(#6): update to use alternate package instruments when one
+        # exists.
         # Data with date mangling, regular F10.7 data, stored monthly
         self.insts.append(gdm.Instrument('sw', 'f107', tag='historic'))
-        test_dates = pysatSpaceWeather.instruments.sw_f107._test_dates
-        self.insts_dates.append([test_dates['']['historic'],
-                                 test_dates['']['historic']
-                                 + dt.timedelta(weeks=52)])
+        # test_dates = sw_f107._test_dates
+        # self.insts_dates.append([test_dates['']['historic'],
+        #                         test_dates['']['historic']
+        #                         + dt.timedelta(weeks=52)])
         self.insts_kwargs.append({'freq': 'MS'})
 
         # Download data for all instruments

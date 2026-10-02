@@ -26,8 +26,8 @@ import time
 import pytest
 
 import GeospaceDataManagement as gdm
-from GeospaceDataManagement.instruments.methods.testing import create_files
 import GeospaceDataManagement.instruments.gdm_testing
+from GeospaceDataManagement.instruments.methods.testing import create_files
 from GeospaceDataManagement.tests.classes.cls_ci import CICleanSetup
 from GeospaceDataManagement.utils import files as futils
 from GeospaceDataManagement.utils import testing

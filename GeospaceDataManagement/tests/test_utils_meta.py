@@ -91,7 +91,7 @@ class TestUpdateFill(object):
         inst.load(date=self.ref_time)
 
         # Ensure there are fill values to check for strings and numbers
-        # TODO(#XX) Remove try/except after numpy >= 1.25
+        # TODO(#1) Remove try/except after numpy >= 1.25
         try:
             str_types = [str, np.str_, np.bytes_, np.dtypes.StrDType,
                          np.dtypes.StringDType, np.dtypes.BytesDType,
@@ -189,7 +189,7 @@ class TestDefaultFillType(object):
         return
 
     @pytest.mark.parametrize("flt_type", [float, np.single, np.float32,
-                                          np.float64, np.float128, np.float16])
+                                          np.float64, np.float16])
     def test_default_fill_values_from_type_float(self, flt_type):
         """Test `default_vill_values_from_type` for object defaults.
 
