@@ -23,7 +23,7 @@ easier the question will be to answer.
 
 ### Bug reports
 
-When [reporting a bug](https://github.com/GeospaceDataManagement/GeospaceDataManagement/issues) please include:
+When [reporting a bug](https://github.com/USNavalResearchLaboratory/GeospaceDataManagement/issues) please include:
 
 * Your operating system name and version
 
@@ -34,7 +34,7 @@ When [reporting a bug](https://github.com/GeospaceDataManagement/GeospaceDataMan
 ### Feature requests and feedback
 
 The best way to send feedback is to file an
-[issue](https://github.com/GeospaceDataManagement/GeospaceDataManagement/issues).
+[issue](https://github.com/USNavalResearchLaboratory/GeospaceDataManagement/issues).
 
 If you are proposing a new feature or a change in something that already exists:
 
