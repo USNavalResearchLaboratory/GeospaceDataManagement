@@ -12,6 +12,7 @@ Welcome to the GeospaceDataManagement documentation
    installation.rst
    quickstart.rst
    tutorial.rst
+   examples.rst
    instruments.rst
    new_instrument.rst
    dependency.rst
