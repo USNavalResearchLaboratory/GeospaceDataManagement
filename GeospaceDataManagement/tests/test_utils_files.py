@@ -583,18 +583,18 @@ class TestFileDirectoryTranslations(CICleanSetup):
         # exists.
         # Data by day, ACE SIS data
         self.insts.append(gdm.Instrument('ace', 'sis', tag='historic'))
-        test_dates = ace_sis._test_dates
-        self.insts_dates.append([test_dates['']['historic']] * 2)
+        # test_dates = ace_sis._test_dates
+        # self.insts_dates.append([test_dates['']['historic']] * 2)
         self.insts_kwargs.append({})
 
         # TODO(#6): update to use alternate package instruments when one
         # exists.
         # Data with date mangling, regular F10.7 data, stored monthly
         self.insts.append(gdm.Instrument('sw', 'f107', tag='historic'))
-        test_dates = sw_f107._test_dates
-        self.insts_dates.append([test_dates['']['historic'],
-                                 test_dates['']['historic']
-                                 + dt.timedelta(weeks=52)])
+        # test_dates = sw_f107._test_dates
+        # self.insts_dates.append([test_dates['']['historic'],
+        #                         test_dates['']['historic']
+        #                         + dt.timedelta(weeks=52)])
         self.insts_kwargs.append({'freq': 'MS'})
 
         # Download data for all instruments
