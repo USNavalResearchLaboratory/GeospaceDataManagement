@@ -288,7 +288,7 @@ def inst_to_netcdf(inst, fname, base_instrument=None, unit_label='units',
     xr_data = inst.data.copy()
 
     # Convert datetime values into integers and then add meta data
-    xr_data[inst.index.name] = unix_time.astype(np.int64)
+    xr_data[inst.index.name] = ((inst.index.name), unix_time.astype(np.int64))
     xr_data[inst.index.name] = xr_data[inst.index.name].assign_attrs(epoch_meta)
 
     # Set the standard encoding values

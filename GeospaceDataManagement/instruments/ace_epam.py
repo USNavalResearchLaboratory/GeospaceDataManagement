@@ -1,0 +1,250 @@
+#!/usr/bin/env python
+# Full license can be found in License.md
+# Full author list can be found in CITATION.cff
+#
+# ----------------------------------------------------------------------------
+# Original Authors: pysat development team, (c) 2020 pysat
+#
+# Modified 2026+
+# This is a U.S. government work and not under copyright protection in the U.S.
+#
+# DISTRIBUTION STATEMENT A: Approved for public release. Distribution is
+# unlimited.
+# ----------------------------------------------------------------------------
+"""Supports ACE Electron, Proton, and Alpha Monitor data.
+
+Properties
+----------
+platform
+    'ace' Advanced Composition Explorer
+name
+    'epam' Electron, Proton, and Alpha Monitor
+tag
+    - 'realtime' Real-time data from the Space Weather Prediction Center (SWPC)
+    - 'historic' Historic data from the SWPC
+inst_id
+    - ''
+
+Note
+----
+This is not the ACE scientific data set, which is provided by NASA
+
+Examples
+--------
+The real-time data is stored by generation date, where each file contains the
+data for the current day.  If you leave download dates empty, though, it will
+grab today's file three times and assign dates from yesterday, today, and
+tomorrow.
+::
+
+    epam = gdm.Instrument('ace', 'epam', tag='realtime')
+    epam.download(start=epam.today())
+    epam.load(date=epam.today())
+
+
+
+Warnings
+--------
+The 'realtime' data contains a changing period of time. Loading multiple files,
+loading multiple days, the data padding feature, and multi_file_day feature
+available from the pyast.Instrument object is not appropriate for 'realtime'
+data.
+
+"""
+
+import datetime as dt
+import functools
+import numpy as np
+
+import GeospaceDataManagement as gdm
+from GeospaceDataManagement.instruments.methods.general import load_csv_data
+from GeospaceDataManagement.instruments.sw_methods import ace as mm_ace
+from GeospaceDataManagement.instruments.sw_methods import general
+
+# ----------------------------------------------------------------------------
+# Instrument attributes
+
+platform = 'ace'
+name = 'epam'
+tags = {'realtime': 'Real-time data from the SWPC',
+        'historic': ' Historic data from the SWPC'}
+inst_ids = {inst_id: [tag for tag in tags.keys()] for inst_id in ['']}
+
+# Define today's date
+now = dt.datetime.now(tz=dt.timezone.utc)
+
+# ----------------------------------------------------------------------------
+# Instrument test attributes
+
+# Set test dates (first level: inst_id, second level: tag)
+_test_dates = {inst_id: {'realtime': dt.datetime(now.year, now.month, now.day),
+                         'historic': dt.datetime(2009, 1, 1)}
+               for inst_id in inst_ids.keys()}
+
+# Set clean warning tests
+_clean_warn = {inst_id: {tag: mm_ace.clean_warn for tag in inst_ids[inst_id]}
+               for inst_id in inst_ids.keys()}
+
+# ----------------------------------------------------------------------------
+# Instrument methods
+
+preprocess = general.preprocess_fill
+
+
+def init(self):
+    """Initialize the Instrument object with instrument specific values."""
+
+    # Set the appropriate acknowledgements and references
+    self.acknowledgements = mm_ace.acknowledgements()
+    self.references = mm_ace.references(self.name)
+    gdm.logger.info(self.acknowledgements)
+
+    return
+
+
+def clean(self):
+    """Clean the real-time ACE data using the status flag.
+
+    Note
+    ----
+    Supports 'clean' and 'dirty'.  Replaces all fill values with NaN.
+    Clean - status flag of zero (nominal data)
+    Dirty - status flag < 9 (accepts bad data record, removes no data record)
+
+    """
+    # Perform the standard ACE cleaning
+    max_status = mm_ace.clean(self)
+
+    # Replace bad values with NaN and remove times with no valid data
+    ecols = ['eflux_38-53', 'eflux_175-315']
+
+    # Evaluate the electron flux data
+    self[self.data['status_e'] > max_status, ecols] = np.nan
+
+    # Evaluate the proton flux data
+    pcols = ['pflux_47-68', 'pflux_115-195', 'pflux_310-580',
+             'pflux_795-1193', 'pflux_1060-1900']
+    self[self.data['status_p'] > max_status, pcols] = np.nan
+
+    # Include both fluxes and the anisotropy index in the removal eval
+    eval_cols = ecols + pcols
+    eval_cols.append('anis_ind')
+
+    # Remove times without any good data
+    good_sum = np.isfinite([self.data[ecol].values for ecol in eval_cols]).sum(
+        axis=0)
+    if 0 in good_sum:
+        self.data = self.data.where(self.data['Epoch'][good_sum != 0],
+                                    drop=True)
+
+    return
+
+
+# ----------------------------------------------------------------------------
+# Instrument functions
+
+download = functools.partial(mm_ace.download, name=name, now=now)
+list_files = functools.partial(mm_ace.list_files, name=name)
+
+
+def load(fnames, tag='', inst_id=''):
+    """Load the ACE space weather prediction data.
+
+    Parameters
+    ----------
+    fnames : array-like
+        Series, list, or array of filenames.
+    tag : str
+        Instrument tag (default='').
+    inst_id : str
+        ACE instrument ID (default='').
+
+    Returns
+    -------
+    data : xr.Dataset
+        Object containing instrument data
+
+    See Also
+    --------
+    GeospaceDataManagement.instruments.methods.general.load_csv_data
+
+    Note
+    ----
+    Called by GeospaceDataManagement. Not intended for direct use by user.
+
+    """
+
+    # Save each file to the output DataFrame
+    data = load_csv_data(fnames,
+                         read_csv_kwargs={'index_col': 0,
+                                          'parse_dates': True}).to_xarray()
+
+    # Assign the meta data
+    meta, status_desc = mm_ace.common_metadata()
+    flux_desc = '5-min averaged Differential '
+
+    meta['status_e'] = {'units': '', 'name': 'Diff e- Flux Status',
+                        'notes': '', 'desc': status_desc, 'fill_val': np.nan,
+                        'min_val': 0, 'max_val': 9}
+    meta['status_p'] = {'units': '', 'name': 'Diff Proton Flux Status',
+                        'notes': '', 'desc': status_desc,
+                        'fill_val': np.nan, 'min_val': 0, 'max_val': 9}
+    meta['anis_ind'] = {'units': '', 'name': 'Anisotropy Index',
+                        'notes': '', 'desc': 'Range: 0.0 - 2.0',
+                        'fill_val': -1.0, 'min_val': 0.0, 'max_val': 2.0}
+    meta['eflux_38-53'] = {'units': 'particles/cm2-s-ster-MeV',
+                           'name': 'Diff e- Flux 38-53 eV',
+                           'notes': '',
+                           'desc': ''.join([flux_desc,
+                                            'Electron Flux between 35-53 eV']),
+                           'fill_val': -1.0e5, 'min_val': -np.inf,
+                           'max_val': np.inf}
+    meta['eflux_175-315'] = {'units': 'particles/cm2-s-ster-MeV',
+                             'name': 'Diff e- Flux 175-315 eV',
+                             'notes': '',
+                             'desc': ''.join([flux_desc, 'Electron Flux ',
+                                              'between 175-315 eV']),
+                             'fill_val': -1.0e5, 'min_val': -np.inf,
+                             'max_val': np.inf}
+    meta['pflux_47-68'] = {'units': 'particles/cm2-s-ster-MeV',
+                           'name': 'Diff Proton Flux 47-68 keV',
+                           'notes': '',
+                           'desc': ''.join([flux_desc,
+                                            'Proton Flux between 47-68 keV']),
+                           'fill_val': -1.0e5, 'min_val': -np.inf,
+                           'max_val': np.inf}
+    meta['pflux_115-195'] = {'units': 'particles/cm2-s-ster-MeV',
+                             'name': 'Diff Proton Flux 115-195 keV',
+                             'notes': '',
+                             'desc': ''.join([flux_desc, 'Proton Flux',
+                                              ' between 115-195 keV']),
+                             'fill_val': -1.0e5, 'min_val': -np.inf,
+                             'max_val': np.inf}
+    meta['pflux_310-580'] = {'units': 'particles/cm2-s-ster-MeV',
+                             'name': 'Diff Proton Flux 310-580 keV',
+                             'notes': '',
+                             'desc': ''.join([flux_desc, 'Proton Flux '
+                                              ' between 310-580 keV']),
+                             'fill_val': -1.0e5, 'min_val': -np.inf,
+                             'max_val': np.inf}
+    meta['pflux_795-1193'] = {'units': 'particles/cm2-s-ster-MeV',
+                              'name': 'Diff Proton Flux 795-1193 keV',
+                              'notes': '',
+                              'desc': ''.join([flux_desc, 'Proton Flux',
+                                               ' between 795-1193 keV']),
+                              'fill_val': -1.0e5, 'min_val': -np.inf,
+                              'max_val': np.inf}
+    meta['pflux_1060-1900'] = {'units': 'particles/cm2-s-ster-MeV',
+                               'name': 'Diff Proton Flux 1060-1900 keV',
+                               'notes': '',
+                               'desc': ''.join([flux_desc, 'Proton Flux ',
+                                                'between 1060-1900 keV']),
+                               'fill_val': -1.0e5, 'min_val': -np.inf,
+                               'max_val': np.inf}
+
+    # Add the meta data
+    for dvar in data.data_vars.keys():
+        if dvar in meta.keys():
+            data[dvar].attrs.update(meta[dvar])
+
+    return data

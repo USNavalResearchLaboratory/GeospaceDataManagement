@@ -1,7 +1,7 @@
-recursive-include GeospaceDataManager *.py
+recursive-include GeospaceDataManagement *.py
 include *.md
-recursive-include GeospaceDataManager *.txt
-recursive-include GeospaceDataManager *.tab
+recursive-include GeospaceDataManagement *.txt
+recursive-include GeospaceDataManagement *.tab
 include LICENSE
 prune docs
 global-exclude *.pdf
