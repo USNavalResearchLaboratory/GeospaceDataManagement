@@ -1,12 +1,12 @@
 # Contributing
 
 Bug reports, feature suggestions, and other contributions are greatly
-appreciated!  GeospaceDataManager welcomes both feedback and contributions.
+appreciated!  GeospaceDataManagement welcomes both feedback and contributions.
 
 ## Short version
 
 * Submit bug reports, feature requests, and questions at
-  [GitHub](https://github.com/USNavalResearchLaboratory/GeospaceDataManager/issues)
+  [GitHub](https://github.com/USNavalResearchLaboratory/GeospaceDataManagement/issues)
 
 * Make all pull requests to the ``develop`` branch
 
@@ -23,7 +23,7 @@ easier the question will be to answer.
 
 ### Bug reports
 
-When [reporting a bug](https://github.com/GeospaceDataManager/GeospaceDataManager/issues) please include:
+When [reporting a bug](https://github.com/GeospaceDataManagement/GeospaceDataManagement/issues) please include:
 
 * Your operating system name and version
 
@@ -34,7 +34,7 @@ When [reporting a bug](https://github.com/GeospaceDataManager/GeospaceDataManage
 ### Feature requests and feedback
 
 The best way to send feedback is to file an
-[issue](https://github.com/GeospaceDataManager/GeospaceDataManager/issues).
+[issue](https://github.com/GeospaceDataManagement/GeospaceDataManagement/issues).
 
 If you are proposing a new feature or a change in something that already exists:
 
@@ -45,14 +45,14 @@ If you are proposing a new feature or a change in something that already exists:
 
 ## Development
 
-To set up `GeospaceDataManager` for local development:
+To set up `GeospaceDataManagement` for local development:
 
-1. [Fork GeospaceDataManager on GitHub](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo).
+1. [Fork GeospaceDataManagement on GitHub](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo).
 
 2. Clone your fork locally:
 
   ```
-    git clone git@github.com:your_name_here/GeospaceDataManager.git
+    git clone git@github.com:your_name_here/GeospaceDataManagement.git
   ```
 
 3. Create a branch for local development:
@@ -68,8 +68,8 @@ To set up `GeospaceDataManager` for local development:
    standard tests.
 
    Tests for custom functions should be added to the appropriately named file
-   in ``GeospaceDataManager/tests``. For example, custom functions for the time
-   utilities are tested in ``GeospaceDataManager/tests/test_utils_time.py``.  If
+   in ``GeospaceDataManagement/tests``. For example, custom functions for the time
+   utilities are tested in ``GeospaceDataManagement/tests/test_utils_time.py``.  If
    no test file exists, then you should create one.  This testing uses pytest,
    which will run tests on any Python file in the test directory that starts
    with ``test``.  Classes must begin with ``Test``, and methods must begin with
@@ -88,7 +88,7 @@ To set up `GeospaceDataManager` for local development:
    flake8 . --count --select=D,E,F,H,W --show-source --statistics
    ```
 
-   Note that GeospaceDataManager uses the `flake-docstrings` and `hacking`
+   Note that GeospaceDataManagement uses the `flake-docstrings` and `hacking`
    packages to ensure standards in docstring formatting.
 
 6. Update/add documentation (in ``docs``).  Even if you don't think it's
@@ -102,7 +102,7 @@ To set up `GeospaceDataManager` for local development:
    git commit -m "AAA: Brief description of your changes"
    ```
    Where AAA is a standard shorthand for the type of change (e.g., BUG or DOC).
-   `GeospaceDataManager` follows the [numpy development workflow](https://numpy.org/doc/stable/dev/development_workflow.html),
+   `GeospaceDataManagement` follows the [numpy development workflow](https://numpy.org/doc/stable/dev/development_workflow.html),
    see the discussion there for a full list of this shorthand notation.  
 
 9. Once you are happy with the local changes, push to GitHub:
@@ -114,7 +114,7 @@ To set up `GeospaceDataManager` for local development:
 10. Submit a pull request through the GitHub website. Pull requests should be
     made to the ``develop`` branch.  Note that automated tests will be run on
     GitHub Actions, but these must be initialized by a member of the
-    GeospaceDataManager team for outside contributors.
+    GeospaceDataManagement team for outside contributors.
 
 
 ## Pull Request Guidelines
@@ -139,7 +139,7 @@ tests on your local system first.
 
 ## Project Style Guidelines
 
-In general, GeospaceDataManager follows PEP8 and numpydoc guidelines.  Pytest
+In general, GeospaceDataManagement follows PEP8 and numpydoc guidelines. Pytest
 runs the unit and integration tests, flake8 checks for style, and sphinx-build
 performs documentation tests.  However, there are certain additional style
 elements that have been adopted to ensure the project maintains a consistent
@@ -151,8 +151,8 @@ coding style. These include:
 * Use no more than 80 characters per line
 * Avoid using Instrument class key attribute names as unrelated variable names:
   `platform`, `name`, `tag`, and `inst_id`
-* The GeospaceDataManager logger is imported into each sub-module and provides
-  status updates at the info and warning levels (as appropriate)
+* The GeospaceDataManagement logger is imported into each sub-module and
+  provides status updates at the info and warning levels (as appropriate)
 * Several dependent packages have common nicknames, including:
   * `import datetime as dt`
   * `import numpy as np`
@@ -166,7 +166,7 @@ coding style. These include:
 * Use setup_method (or setup_class) and teardown_method (or teardown_class) in
   test classes
 * Use pytest parametrize in test classes when appropriate
-* Use GeospaceDataManager testing utilities when appropriate
+* Use GeospaceDataManagement testing utilities when appropriate
 * Provide testing class methods with informative failure statements and
   descriptive, one-line docstrings
 * Block and inline comments should use proper English grammar and punctuation
