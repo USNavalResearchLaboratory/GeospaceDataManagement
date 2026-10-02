@@ -1,4 +1,4 @@
-.. _sw_inst:
+.. _instruments-sw:
 
 Space Weather Instruments
 =========================
