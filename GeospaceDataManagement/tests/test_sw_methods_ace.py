@@ -89,7 +89,7 @@ class TestACESWEPAMMethods(object):
     def test_ace_swepam_hourly_omni_norm(self):
         """Test ACE SWEPAM conversion to OMNI hourly normalized standards."""
 
-        self.testInst['slt'] *= 400.0
+        self.testInst['slt'] = 400.0 * self.testInst['slt']
         mm_ace.ace_swepam_hourly_omni_norm(self.testInst, speed_key='slt',
                                            dens_key='mlt', temp_key='dummy3')
 
