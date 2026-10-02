@@ -228,7 +228,7 @@ class TestCIonly(CICleanSetup):
         # Ensure we can't create a parameters file without valid .json
         testing.eval_bad_input(
             Parameters, OSError,
-            'GeospaceDataParameters is unable to locate a user settings')
+            'GeospaceDataManagement is unable to locate a user settings')
 
         shutil.move(os.path.join(self.root, 'gdm_settings_moved.json'),
                     os.path.join(self.root, 'gdm_settings.json'))
