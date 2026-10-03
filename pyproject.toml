@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "GeospaceDataManagement"
-version = "0.0.1"
+version = "0.0.2"
 description = "Supports scientific data management for geospace products"
 readme = "README.md"
 requires-python = ">=3.10"
