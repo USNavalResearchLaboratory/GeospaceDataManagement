@@ -169,6 +169,7 @@ def combine_f107(standard_inst, forecast_inst, start=None, stop=None,
 
     f107_times = list()
     f107_values = list()
+    f107_attrs = dict()
 
     # Cycle through the desired time range
     itime = dt.datetime(start.year, start.month, start.day)
@@ -221,6 +222,7 @@ def combine_f107(standard_inst, forecast_inst, start=None, stop=None,
                     good_vals])
                 f107_values.extend(new_vals)
                 itime = f107_times[-1] + pds.DateOffset(days=1)
+                f107_attrs.update(standard_inst['f107'].attrs)
             else:
                 inst_flag = 'forecast'
                 notes += "{:})".format(itime.date())
@@ -281,6 +283,7 @@ def combine_f107(standard_inst, forecast_inst, start=None, stop=None,
                         forecast_inst['f107'][good_times].values[good_vals])
                     f107_values.extend(new_vals)
                     itime = f107_times[-1] + pds.DateOffset(days=1)
+                    f107_attrs.update(forecast_inst['f107'].attrs)
 
             notes += "{:})".format(itime.date())
 
@@ -290,7 +293,7 @@ def combine_f107(standard_inst, forecast_inst, start=None, stop=None,
         notes += "{:})".format(itime.date())
 
     if index_name is None:
-        index_name = 'time'
+        index_name = 'Epoch'
     if fill_val is None:
         fill_val = default_fill_values_from_type(float)
 
@@ -328,7 +331,8 @@ def combine_f107(standard_inst, forecast_inst, start=None, stop=None,
         f107_values.extend([fill_val for kk in extend_times])
 
     # Save output data
-    data = xr.Dataset(data_vars={'f107': ((index_name), f107_values)},
+    data = xr.Dataset(data_vars={'f107': ((index_name), f107_values,
+                                          f107_attrs)},
                       coords={index_name: f107_times})
 
     # Resample the output data, filling missing values
@@ -381,7 +385,7 @@ def calc_f107a(f107_inst, f107_name='f107', f107a_name='f107a', min_pnts=41,
             f107a_name))
 
     if fill_label in f107_inst[f107_name].attrs:
-        fill_val = f107_inst.meta[f107_name].attrs[fill_label]
+        fill_val = f107_inst[f107_name].attrs[fill_label]
     else:
         fill_val = default_fill_values_from_type(float)
 
@@ -434,7 +438,7 @@ def calc_f107a(f107_inst, f107_name='f107', f107a_name='f107a', min_pnts=41,
 
     # There may be missing days in the output data, remove these
     if f107_inst.index.shape < f107_fill[time_name].shape:
-        f107_fill = f107_fill.loc[f107_inst.index]
+        f107_fill = f107_fill.loc[{f107_inst.index.name: f107_inst.index}]
 
     # Update the metadata
     if len(f107_inst.index) > 1:
