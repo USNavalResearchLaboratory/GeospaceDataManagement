@@ -270,7 +270,10 @@ def convert_3hr_kp_to_ap(kp_inst, var_name='Kp', unit_label='units',
             var_name))
 
     # Convert from Kp to ap
-    fill_val = kp_inst[var_name].attrs[fill_label]
+    if fill_label in kp_inst[var_name].attrs:
+        fill_val = kp_inst[var_name].attrs[fill_label]
+    else:
+        fill_val = gdm.utils.meta.default_fill_values_from_type(float)
     ap_data = np.array([ap(kp) if kp != fill_val else fill_val
                         for kp in kp_inst[var_name].values])
 
