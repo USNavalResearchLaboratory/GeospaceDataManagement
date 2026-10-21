@@ -283,7 +283,7 @@ def download(date_array, tag, inst_id, data_path, update_files=False,
         downloaded. (default=None)
     verify : bool
         If True, uses certificate verification; if False will not do so. Only
-        used for 'now' tags (default=True)
+        used for the 'now' tag (default=True)
 
     Raises
     ------
