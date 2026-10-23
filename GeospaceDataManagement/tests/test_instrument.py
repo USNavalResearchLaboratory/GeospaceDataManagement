@@ -16,6 +16,7 @@
 
 import datetime as dt
 from importlib import reload
+import logging
 import numpy as np
 import pandas as pds
 import pytest
@@ -489,6 +490,18 @@ class TestInstGeneral(object):
         testing.eval_warnings(self.war,
                               'No files found for Instrument',
                               warn_type=UserWarning)
+        return
+
+    def test_load_empty_instrument_no_downloads_warning(self, caplog):
+        """Test logger warning when downloading from empty repository."""
+
+        # Trying to download without any files to get
+        with caplog.at_level(logging.WARNING, logger='GeospaceDataManagement'):
+            self.empty_inst.download(start=self.empty_inst.today())
+
+        # Test the warning
+        captured = caplog.text
+        assert captured.find('be related to the coverage of the remote') > 0
         return
 
     def test_empty_repr_eval(self):
