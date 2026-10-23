@@ -776,16 +776,19 @@ class Files(object):
                 # there truly a point to this?
                 return
 
+            if new_files is None:
+                new_files = pds.Series()
+
             # Ensure the name of returned Series is None for consistency
             new_files.name = None
 
-            # If we find some files, this is the one directory we store.
-            # If I don't remove the directory paths then loading by filename
+            # If we find some files, this is the one directory we store. If we
+            # don't remove the directory paths then loading by filename
             # becomes more of a challenge. Plus, more memory to store, more
             # difficult for a human to parse when browsing a list, etc. The
             # approach here provides for most of the potential functionality
             # of multiple directories while still leaving the 'single' directory
-            # focus and features of the original GeospaceDataManagement intact.
+            # focus intact.
             if not new_files.empty:
                 self.data_path = path
                 new_files = self._remove_data_dir_path(new_files)
