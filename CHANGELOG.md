@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 --------------------
 * ENH:
   - Added the ability to turn GFZ download certificate verification on and off
+  - Added a warning if some of the requested download days were not retrieved
 * BUG:
   - Fixed F10.7 data concatonation (default index name, assigning meta data)
   - Ensure Kp meta data exists before attempting access
