@@ -17,7 +17,7 @@ historic measurements of the solar wind.  This differs from the ACE scientific
 data, which is available at a greater latency from
 `CDAWeb <https://cdaweb.gsfc.nasa.gov/index.html/>`_. Information about these
 data sets can be found at the `SWPC ACE Solar-Wind page
-<https://www.swpc.noaa.gov/products/ace-real-time-solar-wind>`_.
+<https://www.spaceweather.gov/products/ace-real-time-solar-wind>`_.
 
 
 .. _ace-epam-inst:
@@ -163,7 +163,7 @@ Ap is a geomagnetic index that reflects the magnitude of geomagnetic
 disturbances at Earth but unlike Kp uses a linear scale.  Historic, recent
 (last 30 days), and forecasted values are available from the
 `GFZ Kp <https://kp.gfz.de/en/>`_ and the
-`SWPC Forecasts page <https://www.swpc.noaa.gov/forecasts>`_.
+`SWPC Forecasts page <https://www.spaceweather.gov/forecasts>`_.
 
 
 .. automodule:: GeospaceDataManagement.instruments.sw_ap
@@ -229,7 +229,7 @@ sfu) `[Cortie 1912] <http://adsabs.harvard.edu/full/1912MNRAS..73...52C>`_.
 Historic indices, real-time indices, and forecasted indices are available from
 the
 `LASP F107 <https://lasp.colorado.edu/lisird/data/noaa_radio_flux/>`_ and the
-`SWPC F107 page <https://www.swpc.noaa.gov/phenomena/f107-cm-radio-emissions>`_.
+`SWPC F107 page <https://www.spaceweather.gov/phenomena/f107-cm-radio-emissions>`_.
 
 
 .. automodule:: GeospaceDataManagement.instruments.sw_f107
@@ -244,7 +244,7 @@ Solar Flares
 Solar flares have been monitored for decades and the data has been compiled
 into standard measurements from different data sets. Historic indices,
 real-time indices, and forecasted indices are available from
-`SWPC <https://www.swpc.noaa.gov/phenomena>`_.
+`SWPC <https://www.spaceweather.gov/phenomena>`_.
 
 
 .. automodule:: GeospaceDataManagement.instruments.sw_flare
@@ -275,8 +275,8 @@ Kp
 Kp is a geomagnetic index that reflects the magnitude of geomagnetic
 disturbances at Earth.  Historic, recent (last 30 days), and forecasted values
 are available from the
-`GFZ Kp repository <https://www.gfz-potsdam.de/en/kp-index/>`_, and the
-`SWPC Kp page <https://www.swpc.noaa.gov/products/planetary-k-index>`_.
+`GFZ Kp repository <https://kp.gfz.de/en/>`_, and the
+`SWPC Kp page <https://www.spaceweather.gov/products/planetary-k-index>`_.
 
 
 .. automodule:: GeospaceDataManagement.instruments.sw_kp
@@ -332,7 +332,7 @@ Sunspot Number
 The Sunspot Number (SSN) is one of the oldest continuously measured solar
 indices. Currently, this Instrument provides preliminary and daily values from
 SWPC (for example, here is the
-`forecast page <https://www.swpc.noaa.gov/products/predicted-sunspot-number-and-radio-flux>`_).
+`forecast page <https://www.spaceweather.gov/products/predicted-sunspot-number-and-radio-flux>`_).
 
 .. automodule:: GeospaceDataManagement.instruments.sw_ssn
    :members:
@@ -345,7 +345,7 @@ Storm Probability
 
 Geomagnetic storm predictions are provided by SWPC for global, high-latitude,
 and mid-latitude regions. SWPC uses the
-`NOAA SW scales <https://www.swpc.noaa.gov/noaa-scales-explanation>`_, which
+`NOAA SW scales <https://www.spaceweather.gov/noaa-scales-explanation>`_, which
 are explained here.
 
 .. automodule:: GeospaceDataManagement.instruments.sw_stormprob
