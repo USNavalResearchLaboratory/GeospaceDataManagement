@@ -11,6 +11,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 * BUG:
   - Fixed F10.7 data concatonation (default index name, assigning meta data)
   - Ensure Kp meta data exists before attempting access
+  - Fixed bug in assigning Files attributes when they are empty
+  - When updating variable names in the general instrument methods, do not
+    attempt to rename variables whose names are the same.
 * DOC:
   - Updated redirecting links
 
