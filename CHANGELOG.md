@@ -11,6 +11,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 * BUG:
   - Fixed F10.7 data concatonation (default index name, assigning meta data)
   - Ensure Kp meta data exists before attempting access
+* DOC:
+  - Updated redirecting links
 
 [0.0.2] - 2026-10-02
 --------------------
