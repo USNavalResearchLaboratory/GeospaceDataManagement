@@ -210,9 +210,11 @@ class Files(object):
         self.sub_dir_path = os.path.normpath(
             self.directory_format.format(**self.inst_info))
 
-        if len(self.sub_dir_path) == 1:
-            # If this is just a single directory separator, os.path.join will
-            # die. Reset as an empty string to get the same effect
+        if len(set(self.sub_dir_path)) == 1:
+            # If this is just directory separator(s), os.path.join will
+            # die. Reset as an empty string to get the same effect. Windows
+            # can have multiple directory seporators, so the logic looks for
+            # one unique character
             self.sub_dir_path = ''
 
         # Ensure we have at least one path for gdm data directory
