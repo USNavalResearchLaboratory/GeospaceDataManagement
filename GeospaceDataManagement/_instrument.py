@@ -3217,7 +3217,7 @@ class Instrument(object):
         # Make sure directories are there, otherwise create them
         try:
             os.makedirs(self.files.data_path)
-        except OSError as err:
+        except (OSError, FileNotFoundError) as err:
             if err.errno != errno.EEXIST:
                 # Ok if directories already exist, otherwise exit with an
                 # error that includes the message from original error.
