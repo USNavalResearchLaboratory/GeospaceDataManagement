@@ -3217,14 +3217,15 @@ class Instrument(object):
         # Make sure directories are there, otherwise create them
         try:
             os.makedirs(self.files.data_path)
-        except (OSError, FileNotFoundError) as err:
+        except OSError as err:
             if err.errno != errno.EEXIST:
                 # Ok if directories already exist, otherwise exit with an
                 # error that includes the message from original error.
                 msg = ''.join(('There was a problem creating the path: ',
                                self.files.data_path,
                                ', to store downloaded data for ', self.platform,
-                               self.name, '. ', err.message))
+                               self.name, '. ', err.message
+                               if hasattr(err, 'message') else repr(err)))
                 raise ValueError(msg)
 
         if start is None and stop is None and date_array is None:
