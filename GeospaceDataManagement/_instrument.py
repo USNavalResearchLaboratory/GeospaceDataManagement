@@ -3224,7 +3224,8 @@ class Instrument(object):
                 msg = ''.join(('There was a problem creating the path: ',
                                self.files.data_path,
                                ', to store downloaded data for ', self.platform,
-                               self.name, '. ', err.message))
+                               self.name, '. ', err.message
+                               if hasattr(err, 'message') else repr(err)))
                 raise ValueError(msg)
 
         if start is None and stop is None and date_array is None:
@@ -3306,6 +3307,17 @@ class Instrument(object):
                         self.bounds = (self.files[dsel1].iloc[0],
                                        self.files[dsel2].iloc[-1],
                                        curr_bound[2], curr_bound[3])
+
+            # Check the updated file range to see if it covers the requested
+            # download period
+            missing_dates = [adate for adate in date_array
+                             if adate not in self.files.files.index]
+            if len(missing_dates) > 0:
+                gdm.logger.warning(''.join([
+                    'Unable to download {:d} days '.format(len(missing_dates)),
+                    'between ', repr(missing_dates[0]), ' and ',
+                    repr(missing_dates[-1]), '; this may be related to the ',
+                    'coverage of the remote repository']))
         else:
             gdm.logger.warning('Requested download over an empty date range.')
 

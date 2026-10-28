@@ -3,6 +3,20 @@ Change Log
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+[0.0.3] - 2026-10-XX
+--------------------
+* ENH:
+  - Added the ability to turn GFZ download certificate verification on and off
+  - Added a warning if some of the requested download days were not retrieved
+* BUG:
+  - Fixed F10.7 data concatonation (default index name, assigning meta data)
+  - Ensure Kp meta data exists before attempting access
+  - Fixed bug in assigning Files attributes when they are empty
+  - When updating variable names in the general instrument methods, do not
+    attempt to rename variables whose names are the same.
+* DOC:
+  - Updated redirecting links
+
 [0.0.2] - 2026-10-02
 --------------------
 * ENH:

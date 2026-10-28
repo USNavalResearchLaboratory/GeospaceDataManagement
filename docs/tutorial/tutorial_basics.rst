@@ -192,7 +192,7 @@ GeospaceDataManagement methods.  DMSP data is hosted by the `Madrigal database
 <https://cedar.openmadrigal.org/index.html>`_, a community resource for
 geospace data. The proper process for downloading DMSP and other Madrigal data
 is built into the open source tool
-`madrigalWeb <http://cedar.openmadrigal.org/docs/name/rr_python.html>`_,
+`madrigalWeb <https://cedar.openmadrigal.org/docs/name/rr_python.html>`_,
 which is invoked appropriately by GeospaceDataManagement within the
 :py:mod:`dmsp_ivm` sub-module. Madrigal requires that users provide their name
 and email address as their username and password.

@@ -262,7 +262,7 @@ def list_files(tag='', inst_id='', data_path='', format_str=None):
 
 
 def download(date_array, tag, inst_id, data_path, update_files=False,
-             mock_download_dir=None):
+             mock_download_dir=None, verify=True):
     """Download solar magnetic field data from the appropriate repository.
 
     Parameters
@@ -281,6 +281,9 @@ def download(date_array, tag, inst_id, data_path, update_files=False,
         Local directory with downloaded files or None. If not None, will
         process any files with the correct name and date as if they were
         downloaded. (default=None)
+    verify : bool
+        If True, uses certificate verification; if False will not do so. Only
+        used for the 'now' tag (default=True)
 
     Raises
     ------
@@ -316,6 +319,7 @@ def download(date_array, tag, inst_id, data_path, update_files=False,
                                       "%Y-%m", gfz_data_name,
                                       pds.DateOffset(months=1, seconds=-1),
                                       update_files=update_files,
-                                      mock_download_dir=mock_download_dir)
+                                      mock_download_dir=mock_download_dir,
+                                      verify=verify)
 
     return

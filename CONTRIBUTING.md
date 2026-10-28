@@ -47,7 +47,7 @@ If you are proposing a new feature or a change in something that already exists:
 
 To set up `GeospaceDataManagement` for local development:
 
-1. [Fork GeospaceDataManagement on GitHub](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo).
+1. [Fork GeospaceDataManagement on GitHub](https://docs.github.com/en/pull-requests/how-tos/work-with-forks/fork-a-repo).
 
 2. Clone your fork locally:
 

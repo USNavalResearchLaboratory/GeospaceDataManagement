@@ -227,7 +227,8 @@ def list_files(tag='', inst_id='', data_path='', format_str=None):
     return files
 
 
-def download(date_array, tag, inst_id, data_path, mock_download_dir=None):
+def download(date_array, tag, inst_id, data_path, mock_download_dir=None,
+             verify=True):
     """Download the Ap index data from the appropriate repository.
 
     Parameters
@@ -244,6 +245,9 @@ def download(date_array, tag, inst_id, data_path, mock_download_dir=None):
         Local directory with downloaded files or None. If not None, will
         process any files with the correct name and date as if they were
         downloaded (default=None)
+    verify : bool
+        If True, uses certificate verification; if False will not do so. Only
+        used for 'def' and 'now' tags (default=True)
 
     Note
     ----
@@ -262,7 +266,8 @@ def download(date_array, tag, inst_id, data_path, mock_download_dir=None):
 
     if tag in ['def', 'now']:
         sw_methods.gfz.kp_ap_cp_download(platform, name, date_array, tag,
-                                         inst_id, data_path, mock_download_dir)
+                                         inst_id, data_path, mock_download_dir,
+                                         verify=verify)
     elif tag == 'recent':
         sw_methods.swpc.kp_ap_recent_download(name, date_array, data_path,
                                               mock_download_dir)

@@ -226,6 +226,23 @@ class TestSWKp(object):
         assert self.inst['3hr_ap'].max() <= self.inst['3hr_ap'].attrs['max_val']
         return
 
+    def test_convert_kp_to_ap_no_fill_attr(self):
+        """Test conversion of Kp to ap with no Kp fill value attribute."""
+        # Remove the fill value attribute
+        del self.inst['Kp'].attrs['fill_val']
+        assert 'fill_val' not in self.inst['Kp'].attrs
+
+        # Run the conversion
+        kp_ap.convert_3hr_kp_to_ap(self.inst)
+
+        # Test the output, which will have a fill value attribute set to NaN
+        assert '3hr_ap' in self.inst.variables
+        assert len(self.inst['3hr_ap'].attrs) > 0
+        assert self.inst['3hr_ap'].min() >= self.inst['3hr_ap'].attrs['min_val']
+        assert self.inst['3hr_ap'].max() <= self.inst['3hr_ap'].attrs['max_val']
+        assert np.isnan(self.inst['3hr_ap'].attrs['fill_val'])
+        return
+
     def test_convert_kp_to_ap_fill_val(self):
         """Test conversion of Kp to ap with fill values."""
 
