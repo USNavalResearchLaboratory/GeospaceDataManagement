@@ -210,6 +210,11 @@ class Files(object):
         self.sub_dir_path = os.path.normpath(
             self.directory_format.format(**self.inst_info))
 
+        if len(self.sub_dir_path) == 1:
+            # If this is just a single directory separator, os.path.join will
+            # die. Reset as an empty string to get the same effect
+            self.sub_dir_path = ''
+
         # Ensure we have at least one path for gdm data directory
         if len(gdm.params['data_dirs']) == 0:
             raise NameError("".join(("GeospaceDataManagement's `data_dirs` ",
