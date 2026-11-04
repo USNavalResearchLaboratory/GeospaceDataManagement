@@ -184,8 +184,12 @@ def remove_leading_text(inst, target=None):
         else:
             map_keys = {}
             for key in inst.data.variables.keys():
-                map_keys[key] = key.split(prepend_str)[-1]
-            inst.data = inst.data.rename(name_dict=map_keys)
+                new_key = key.split(prepend_str)[-1]
+                if key != new_key:
+                    map_keys[key] = new_key
+
+            if len(map_keys.keys()) > 0:
+                inst.data = inst.data.rename(name_dict=map_keys)
 
     return
 

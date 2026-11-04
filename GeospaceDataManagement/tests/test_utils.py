@@ -282,14 +282,14 @@ class TestIfyFunctions(object):
         return
 
     @pytest.mark.parametrize('iterable', [
-        np.timedelta64(1), np.full((1, 1), np.timedelta64(1)),
-        np.full((2, 2), np.timedelta64(1)),
-        np.full((3, 3, 3), np.timedelta64(1))])
+        np.timedelta64(1, 's'), np.full((1, 1), np.timedelta64(1, 's')),
+        np.full((2, 2), np.timedelta64(1, 's')),
+        np.full((3, 3, 3), np.timedelta64(1, 's'))])
     def test_listify_class_arrays(self, iterable):
         """Test listify with various np.arrays of classes."""
 
         new_iterable = utils.listify(iterable)
-        tst_iterable = [np.timedelta64(1)
+        tst_iterable = [np.timedelta64(1, 's')
                         for i in range(int(np.prod(np.shape(iterable))))]
         utils.testing.assert_lists_equal(new_iterable, tst_iterable)
         return

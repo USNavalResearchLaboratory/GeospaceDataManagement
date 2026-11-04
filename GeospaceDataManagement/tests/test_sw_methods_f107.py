@@ -223,6 +223,7 @@ class TestSWF107Combine(object):
 
         # Test the output
         assert np.isnan(f107_inst.data["f107"]).all()
+        assert f107_inst.index.name == "Epoch"
 
         del combo_in, f107_inst
         return
@@ -257,6 +258,10 @@ class TestSWF107Combine(object):
         assert f107_inst.index[-1] < self.combine_times['stop']
         assert len(f107_inst.vars_no_time) == 1
         assert 'f107' in f107_inst.variables
+
+        # Test attributes
+        for akey in self.combine_inst['historic']['f107'].attrs.keys():
+            assert akey in f107_inst['f107'].attrs
 
         del f107_inst
         return

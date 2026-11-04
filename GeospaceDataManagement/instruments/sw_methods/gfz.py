@@ -59,7 +59,7 @@ hpo_refs = '\n'.join([''.join(["Yamazaki, Y., Matzka, J., Stolle, C., ",
 
 def json_downloads(date_array, data_path, local_file_prefix, local_date_fmt,
                    gfz_data_name, freq, update_files=False, is_def=False,
-                   mock_download_dir=None):
+                   mock_download_dir=None, verify=True):
     """Download data from GFZ into CSV files at a specified cadence.
 
     Parameters
@@ -89,6 +89,9 @@ def json_downloads(date_array, data_path, local_file_prefix, local_date_fmt,
         Local directory with downloaded files or None. If not None, will
         process any files with the correct name and date (following the local
         file prefix and date format) as if they were downloaded (default=None)
+    verify : bool
+        If True, uses certificate verification; if False will not do so
+        (default=True)
 
     Raises
     ------
@@ -131,7 +134,7 @@ def json_downloads(date_array, data_path, local_file_prefix, local_date_fmt,
                     query_url = '{:s}&status=def'.format(query_url)
 
                 # The data is returned as a JSON file
-                req = requests.get(query_url, verify=False)
+                req = requests.get(query_url, verify=verify)
 
                 # Process the JSON file
                 if req.text.find('Gateway Timeout') >= 0:
@@ -175,7 +178,7 @@ def json_downloads(date_array, data_path, local_file_prefix, local_date_fmt,
 
 
 def kp_ap_cp_download(platform, name, date_array, tag, inst_id, data_path,
-                      mock_download_dir=None):
+                      mock_download_dir=None, verify=True):
     """Download Kp, ap, and Cp data from GFZ.
 
     Parameters
@@ -197,6 +200,9 @@ def kp_ap_cp_download(platform, name, date_array, tag, inst_id, data_path,
         Local directory with downloaded files or None. If not None, will
         process any files with the correct name and date (following the local
         file prefix and date format) as if they were downloaded (default=None)
+    verify : bool
+        If True, uses certificate verification; if False will not do so
+        (default=True)
 
     Raises
     ------
@@ -252,7 +258,7 @@ def kp_ap_cp_download(platform, name, date_array, tag, inst_id, data_path,
                                       dl_date.strftime('%Y'))))
             if mock_download_dir is None:
                 furl = ''.join([burl, fname])
-                req = requests.get(furl, verify=False)
+                req = requests.get(furl, verify=verify)
 
                 raw_txt = req.text if req.ok else None
             else:
