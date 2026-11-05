@@ -355,8 +355,8 @@ Simple Analysis Example
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 Here we present an example, following from the simple workflow above, where we
-plot DMSP ion temperature data over a season. GeospaceDataManagement provides a
-function,
+plot the mean of a variable data over a range of days.
+:py:mod:`GeospaceDataManagement` provides a function,
 :py:func:`GeospaceDataManagement.utils.time.create_date_range`, that returns an
 array of dates over a season. This time period does not need to be continuous
 (e.g., load both the vernal and autumnal equinoxes).
@@ -365,43 +365,43 @@ array of dates over a season. This time period does not need to be continuous
 
     import matplotlib.pyplot as plt
     import numpy as np
-    import pandas as pds
-
-    # Create empty series to hold result
-    mean_ti = pds.Series()
 
     # Get list of dates between start and stop
-    start = dt.datetime(2001, 1, 1)
-    stop = dt.datetime(2001, 1, 10)
-    dmsp.download(start=start, stop=stop, user=username, password=password)
+    start = dt.datetime(2009, 1, 1)
+    stop = dt.datetime(2009, 1, 10)
+
+    inst = gdm.Instrument('gdm', 'testing')
     date_array = gdm.utils.time.create_date_range(start, stop)
 
     # Iterate over season, calculate the mean Ion Temperature
+    mean_vals = list()
+    mean_time = list()
     for date in date_array:
-       # Load data into dmsp.data
-       dmsp.load(date=date)
+       # Load data
+       inst.load(date=date)
 
        # Check if data present
-       if not dmsp.empty:
-           # Isolate data to locations near geomagnetic equator
-           idx, = np.where((dmsp['mlat'] < 5) & (dmsp['mlat'] > -5))
+       if not inst.empty:
+           # Isolate data to locations near the equator
+           idx, = np.where((inst['latitude'] < 5) & (inst['latitude'] > -5))
 
            # Downselect data
-           dmsp.data = dmsp[idx]
+           inst.data = inst[idx]
 
            # Compute mean ion temperature using pandas functions and store
-           mean_ti[dmsp.date] = dmsp['ti'].abs().mean(skipna=True)
+           mean_vals.append(inst['dummy1'].abs().mean(skipna=True).item())
+	   mean_time.append(inst.date)
 
-    # Plot the result using pandas functionality for a simple figure
-    mean_ti.plot(title='Mean Ion Temperature near Magnetic Equator')
+    # Plot the result
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(mean_time, mean_vals, 'b*-')
+    ax.set_ylabel('Daily Mean of Dummy1')
+    ax.set_xlabel('Days')
+    fig.suptitle('Mean of `dummy1` test variable with 5 degrees of the equator')
+    fig.set_figwidth(12)
 
-    # Improve figure using matplotlib tools
-    plt.ylabel("{:s} ({:s})".format(dmsp['ti'].attrs['name'],
-                                    dmsp['ti'].attrs['units']))
-    plt.xlabel("Universal Time", labelpad=-15)
-
-
-# .. image:: ../images/basic_demo.png
+.. image:: ../images/gdm_basic_demo.png
 
 Metadata
 ^^^^^^^^
