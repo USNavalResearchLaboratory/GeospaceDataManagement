@@ -219,7 +219,8 @@ def inst_to_netcdf(inst, fname, base_instrument=None, unit_label='units',
             name_label, inst.meta_labels))
 
     # Ensure directory path leading up to filename exists
-    gdm.utils.files.check_and_make_path(os.path.split(fname)[0])
+    gdm.utils.files.check_and_make_path(os.path.split(os.path.expanduser(
+        fname))[0])
 
     # `base_instrument` is used to define the standard attributes attached to
     # the Instrument object. Any additional attributes added to the main input
