@@ -8,6 +8,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 * ENH:
   - Added the ability to turn GFZ download certificate verification on and off
   - Added a warning if some of the requested download days were not retrieved
+  - Added support for unexpanded user paths during file creation
 * BUG:
   - Fixed F10.7 data concatonation (default index name, assigning meta data)
   - Ensure Kp meta data exists before attempting access
@@ -16,6 +17,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
     attempt to rename variables whose names are the same.
 * DOC:
   - Updated redirecting links
+  - Added more tutorials
+  - Published on RTDs
 
 [0.0.2] - 2026-10-02
 --------------------
