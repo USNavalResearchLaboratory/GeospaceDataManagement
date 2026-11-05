@@ -69,7 +69,7 @@ def json_downloads(date_array, data_path, local_file_prefix, local_date_fmt,
     data_path : str
         Path to data directory.
     local_file_prefix : str
-        Prefix for local files, e.g., 'tag_' or 'tag_monthly_'
+        Prefix for local files, e.g., `'tag_'` or `'tag_monthly_'`
     local_date_fmt : str
         String format for the local filename, e.g., '%Y-%m-%d' or '%Y-%m'
     gfz_data_name : str
