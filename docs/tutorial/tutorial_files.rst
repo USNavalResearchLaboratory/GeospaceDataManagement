@@ -129,7 +129,7 @@ s are present along with some user defined values, such as references and
 acknowledgements, that are attached to the :py:mod:`GeospaceDataManagement`
 testing :py:class:`~GeospaceDataManagement._instrument.Instrument` object.
 
-.. code:: python
+.. code::
 
    import netCDF4
    import os
@@ -138,7 +138,7 @@ testing :py:class:`~GeospaceDataManagement._instrument.Instrument` object.
    print(ndata)
 
    <class 'netCDF4.Dataset'>
-root group (NETCDF4 data model, file format HDF5):
+    root group (NETCDF4 data model, file format HDF5):
     acknowledgements: Test instruments provided through GeospaceDataManagement at https://www.github.com/USNavalResearchLaboratory/GeospaceDataManagement
     new_thing: 1
     references: Burrell, A. G. (2026). USNavalResearchLaboratory/GeospaceDataManagement v0.0.2 (Version v0.0.2). https://github.com/USNavalResearchLaboratory/GeospaceDataManagement
