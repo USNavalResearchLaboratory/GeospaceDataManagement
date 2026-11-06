@@ -269,7 +269,7 @@ def download(date_array, tag='', inst_id='', data_path=None, user=None,
 
     """
     # Ensure the date range is correct
-    if date_array.freq not in ['AS-JAN', 'YS', 'AS']:
+    if date_array.freq not in ['YS-JAN', 'YS']:
         date_array = create_date_range(
             dt.datetime(date_array[0].year, 1, 1), date_array[-1], freq='YS')
 
