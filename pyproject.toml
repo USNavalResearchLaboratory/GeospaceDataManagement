@@ -71,6 +71,12 @@ doc = [
 space_weather = [
   "requests"
 ]
+madrigal = [
+  "h5py",
+  "madrigalWeb",
+  "packaging"
+]
+instruments = ["GeospaceDataManagement[space_weather,madrigal]"]
 
 [project.urls]
 Source = "https://github.com/USNavalResearchLaboratory/GeospaceDataManagement"
