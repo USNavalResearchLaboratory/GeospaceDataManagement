@@ -923,7 +923,9 @@ def check_and_make_path(path, expand_path=False):
 
         # Check that we have a potentially valid path
         if len(root_path) == 0:
-            raise ValueError('Invalid path specification.')
+            raise ValueError(
+                ''.join(['Invalid path specification for input [', path,
+                         '] with root path [', root_path, ']']))
 
         # Iterate through given path until we hit a directory that exists.
         make_dir = list()
@@ -936,7 +938,9 @@ def check_and_make_path(path, expand_path=False):
 
             # Check that we continue to have a remotely valid path
             if len(root_path) == 0:
-                raise ValueError('Invalid path specification.')
+                raise ValueError(
+                    ''.join(['Invalid path specification for input [', path,
+                             '] with root path [', root_path, ']']))
 
         if len(local_dir) > 0:
             # Avoid case where input is path='/stuff/level/'.
