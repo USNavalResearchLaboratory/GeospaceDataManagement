@@ -42,12 +42,12 @@ def cedar_rules():
     return ackn
 
 
-def known_madrigal_inst_codes(pandas_format=None):
+def known_madrigal_inst_codes(is_timeseries=None):
     """Supply known Madrigal instrument codes with a brief description.
 
     Parameters
     ----------
-    pandas_format : bool or NoneType
+    is_timeseries : bool or NoneType
        Separate instrument codes by time-series (True) or multi-dimensional
        data types (False) if a boolean is supplied, or supply all if NoneType
        (default=None)
@@ -216,9 +216,9 @@ def known_madrigal_inst_codes(pandas_format=None):
                  '4481': 'Arecibo green line photometer',
                  '7191': 'USU Mesospheric Temperature Mapper'}
 
-    if pandas_format is None:
+    if is_timeseries is None:
         inst_codes = dict(**time_series, **multi_dim)
-    elif pandas_format:
+    elif is_timeseries:
         inst_codes = time_series
     else:
         inst_codes = multi_dim
@@ -539,6 +539,7 @@ def get_meta_from_hdf5(file_ptr, meta_dict, top_key='top', unit_label='units',
         Existing dictionary with meta data
     top_key : str
         Key for the top-level data, must not conflict with a data variable
+        (default='top')
     unit_label : str
         Meta data label for units (default='units')
     name_label : str
