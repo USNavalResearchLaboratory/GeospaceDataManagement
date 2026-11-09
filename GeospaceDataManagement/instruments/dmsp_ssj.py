@@ -210,7 +210,7 @@ def load(fnames, tag='', inst_id=''):
     intended for direct user interaction.
 
     """
-    # The ABI data has a yearly cadance, extract the unique filenames to load
+    # Construct a list of file names
     load_fnames = list()
     file_dates = list()
     for fname in fnames:
@@ -223,9 +223,10 @@ def load(fnames, tag='', inst_id=''):
 
     # If there is a date range, downselect here
     if len(file_dates) > 0:
-        idx, = np.where((data.index >= min(file_dates))
-                        & (data.index < max(file_dates) + dt.timedelta(days=1)))
-        data = data.iloc[idx, :]
+        idx, = np.where((pds.to_datetime(data['time']) >= min(file_dates))
+                        & (pds.to_datetime(data['time'] < max(file_dates)
+                                           + dt.timedelta(days=1)))
+        data = data.where(data['time'][idx], drop=True)
 
     return data
 
