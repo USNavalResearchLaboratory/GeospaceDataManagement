@@ -63,6 +63,8 @@ Examples
 
 import datetime as dt
 import functools
+import numpy as np
+import pandas as pds
 
 import GeospaceDataManagement as gdm
 from GeospaceDataManagement.instruments.madrigal_methods import general
@@ -212,13 +214,15 @@ def load(fnames, tag='', inst_id=''):
     data = general.load([fname], tag=tag, inst_id=inst_id)
 
     # Test to see if there is data beyond the expected file end
-    if data.index[-1] > madrigal_end:
+    if pds.to_datetime(data['time'][-1].item()) > madrigal_end:
         gdm.logger.critical(''.join([
             'There is data beyond ', '{:} in the '.format(madrigal_end),
             'OMNI2 IMF file, please notify the GeospaceDataMangement ',
             'developers so that theycan update this Instrument.']))
 
     # Select the data for the desired time period
-    data = data[fstart:fstop]
+    inds = np.where((pds.to_datetime(data['time']) >= fstart)
+                    & (pds.to_datetime(data['time']) < fstop))
+    data = data.where(data['time'][inds], drop=True)
 
     return data

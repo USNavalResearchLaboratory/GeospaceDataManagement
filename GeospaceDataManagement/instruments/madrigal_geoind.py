@@ -52,6 +52,8 @@ Examples
 
 import datetime as dt
 import functools
+import numpy as np
+import pandas as pds
 
 import GeospaceDataManagement as gdm
 from GeospaceDataManagement.instruments.madrigal_methods import general
@@ -215,6 +217,8 @@ def load(fnames, tag='', inst_id=''):
     data = general.load([fname], tag=tag, inst_id=inst_id)
 
     # Select the data for the desired time period
-    data = data[fstart:fstop]
+    inds = np.where((pds.to_datetime(data['time']) >= fstart)
+                    & (pds.to_datetime(data['time']) < fstop))
+    data = data.where(data['time'][inds], drop=True)
 
     return data
