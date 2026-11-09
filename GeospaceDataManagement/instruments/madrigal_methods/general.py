@@ -578,8 +578,13 @@ def get_meta_from_hdf5(file_ptr, meta_dict, top_key='top', unit_label='units',
     # Add additional metadata notes. Custom attributes attached to the data
     for key in file_ptr['Metadata']:
         if key != 'Data Parameters':
-            meta_dict[top_key].update({key.replace(' ', '_'):
-                                       file_ptr['Metadata'][key][:]})
+            if top_key not in meta_dict.keys():
+                meta_dict[top_key] = {key.replace(' ', '_'):
+                                      file_ptr['Metadata'][key][:]}
+
+            else:
+                meta_dict[top_key].update({key.replace(' ', '_'):
+                                           file_ptr['Metadata'][key][:]})
 
     return file_labels
 
