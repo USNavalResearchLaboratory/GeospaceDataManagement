@@ -889,6 +889,7 @@ def load(fnames, tag='', inst_id='', xarray_coords=None, top_key='top',
             else:
                 # Set the index to time
                 ldata.index = time
+                ldata.index.name = 'time'
 
                 # Recast as an xarray object
                 ldata = ldata.to_xarray()
