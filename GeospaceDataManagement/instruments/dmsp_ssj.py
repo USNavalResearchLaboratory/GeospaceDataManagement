@@ -224,8 +224,8 @@ def load(fnames, tag='', inst_id=''):
     # If there is a date range, downselect here
     if len(file_dates) > 0:
         idx, = np.where((pds.to_datetime(data['time']) >= min(file_dates))
-                        & (pds.to_datetime(data['time'] < max(file_dates)
-                                           + dt.timedelta(days=1))))
+                        & (pds.to_datetime(data['time']) < max(file_dates)
+                                           + dt.timedelta(days=1)))
         data = data.where(data['time'][idx], drop=True)
 
     return data
