@@ -225,7 +225,7 @@ def load(fnames, tag='', inst_id=''):
     if len(file_dates) > 0:
         idx, = np.where((pds.to_datetime(data['time']) >= min(file_dates))
                         & (pds.to_datetime(data['time'] < max(file_dates)
-                                           + dt.timedelta(days=1)))
+                                           + dt.timedelta(days=1))))
         data = data.where(data['time'][idx], drop=True)
 
     return data
