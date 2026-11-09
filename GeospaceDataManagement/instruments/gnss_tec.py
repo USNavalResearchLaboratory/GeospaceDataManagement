@@ -328,14 +328,14 @@ def load(fnames, tag='', inst_id='', los_method='site', los_value=None,
     """
     # Load the specified data
     if tag == 'vtec':
-        data, meta, lat_keys, lon_keys = gnss.load_vtec(fnames)
+        data, lat_keys, lon_keys = gnss.load_vtec(fnames)
     elif tag == 'site':
-        data, meta, lat_keys, lon_keys = gnss.load_site(fnames)
+        data, lat_keys, lon_keys = gnss.load_site(fnames)
     elif tag == 'los':
         if los_value is None:
             raise ValueError('must specify a valid {:}'.format(los_method))
 
-        data, meta, lat_keys, lon_keys = gnss.load_los(
+        data, lat_keys, lon_keys = gnss.load_los(
             fnames, los_method, los_value, los_range=los_range,
             gnss_network=gnss_network, unit_label=unit_label,
             name_label=name_label, desc_label=desc_label)
