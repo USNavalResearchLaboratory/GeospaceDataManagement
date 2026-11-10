@@ -122,15 +122,18 @@ def clean(self):
 
     Notes
     -----
-    Supports 'clean', 'dusty', 'dirty' in the sense that all
-    levels use the flag to clean data the same way.
-    'None' is also supported as it signifies no cleaning.
+    Supports 'clean', 'dusty', 'dirty' in the sense that all levels use the
+    flag to clean data the same way. 'None' is also supported as it signifies
+    no cleaning.
+
+    Expects the 'units' meta data to be present and updates 'fill_val'
 
     """
 
     warned = False
     for dvar in self.variables:
-        if self.meta[dvar, self.meta.labels.units].find('nT') >= 0:
+        if 'units' in self[dvar].attrs and self[dvar].attrs[
+                'units'].find('nT') >= 0:
             # The 'clean', 'dusty', and 'dirty' levels all replace the missing
             # parameter value of -32766 with NaN
             mask = self[dvar] == self[dvar].attrs['fill_val']
@@ -270,6 +273,7 @@ def load(fnames, tag='', inst_id='', unit_label='units', name_label='name',
         # Load the data into a pandas DataFrame
         data = pds.DataFrame.from_records(file_data[dmask], columns=labels,
                                           index=tindex)
+        data.index.name = 'time'
 
     # Ensure that data is at least an empty Dataset
     if data is None:
