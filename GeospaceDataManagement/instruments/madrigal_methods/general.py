@@ -918,7 +918,12 @@ def load(fnames, tag='', inst_id='', xarray_coords=None, top_key='top',
             if mkey == top_key:
                 data.attrs.update(meta[mkey])
             else:
-                data[mkey].attrs.update(meta[mkey])
+                if mkey not in data.data_vars.keys():
+                    gdm.logger.critical("".join([
+                        "Data variable [", mkey, "] not loaded, but has meta",
+                        "data. Check file format against `xarray_coords`."]))
+                else:
+                    data[mkey].attrs.update(meta[mkey])
 
     # Ensure that data is at least an empty Dataset
     if data is None:
