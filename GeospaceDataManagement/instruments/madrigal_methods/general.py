@@ -569,7 +569,7 @@ def get_meta_from_hdf5(file_ptr, meta_dict, top_key='top', unit_label='units',
             meta_dict[name_string.lower()] = {
                 name_label: name_string, unit_label: unit_string,
                 desc_label: desc_string}
-        elif not np.all([akey in meta_dict[name_string.lower()].attrs
+        elif not np.all([akey in meta_dict[name_string.lower()]
                          for akey in [name_label, unit_label, desc_label]]):
             meta_dict[name_string.lower()].update({
                 name_label: name_string, unit_label: unit_string,
