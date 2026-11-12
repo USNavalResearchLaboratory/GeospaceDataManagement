@@ -926,7 +926,7 @@ class TestFileUtils(CICleanSetup):
         """
 
         testing.eval_bad_input(gdm.utils.files.check_and_make_path,
-                               ValueError, 'Invalid path specification.',
+                               ValueError, 'Invalid path specification',
                                input_args=[path])
 
         return
