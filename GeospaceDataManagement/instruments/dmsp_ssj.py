@@ -67,9 +67,9 @@ import pandas as pds
 import warnings
 
 import GeospaceDataManagement as gdm
-from GeospaceDataManagement.utils.time import create_date_range
 from GeospaceDataManagement.instruments.madrigal_methods import dmsp
 from GeospaceDataManagement.instruments.madrigal_methods import general
+from GeospaceDataManagement.utils.time import create_date_range
 
 # ----------------------------------------------------------------------------
 # Instrument attributes

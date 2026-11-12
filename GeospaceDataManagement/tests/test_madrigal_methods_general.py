@@ -388,6 +388,7 @@ class TestErrors(object):
 @pytest.mark.skipif(no_mad, reason="Madrigal test only")
 class TestSimpleFiles(object):
     """Tests for general methods with simple files."""
+
     def setup_class(self):
         """Initialize the testing setup once before all tests are run."""
 
@@ -705,6 +706,7 @@ class TestNetCDFFiles(object):
 @pytest.mark.skipif(no_mad, reason="Madrigal test only")
 class TestListFiles(object):
     """Tests for general methods function `list_files`."""
+
     def setup_class(self):
         """Initialize the testing setup once before all tests are run."""
 
