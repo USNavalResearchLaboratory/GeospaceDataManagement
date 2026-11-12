@@ -29,8 +29,8 @@ import GeospaceDataManagement as gdm
 from GeospaceDataManagement.utils import testing
 
 try:
-    from madrigalWeb import madrigalWeb
     from GeospaceDataManagement.instruments.madrigal_methods import general
+    from madrigalWeb import madrigalWeb
     no_mad = False
 except ImportError:
     no_mad = True
