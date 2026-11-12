@@ -35,6 +35,11 @@ try:
 except ImportError:
     no_mad = True
 
+    class general(object):
+        """Placeholder class so that tests will load and skip safely."""
+
+        file_type = dict()
+
 
 @pytest.mark.skipif(no_mad, reason="Madrigal test only")
 class TestLocal(object):
