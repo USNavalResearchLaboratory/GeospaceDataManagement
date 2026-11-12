@@ -38,7 +38,7 @@ except ImportError:
     class general(object):
         """Placeholder class so that tests will load and skip safely."""
 
-        file_type = dict()
+        file_types = dict()
 
 
 @pytest.mark.skipif(no_mad, reason="Madrigal test only")
