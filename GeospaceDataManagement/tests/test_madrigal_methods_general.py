@@ -20,7 +20,6 @@ import numpy as np
 import os
 import tempfile
 
-from madrigalWeb import madrigalWeb
 import netCDF4 as nc
 import pandas as pds
 import pytest
@@ -30,6 +29,7 @@ import GeospaceDataManagement as gdm
 from GeospaceDataManagement.utils import testing
 
 try:
+    from madrigalWeb import madrigalWeb
     from GeospaceDataManagement.instruments.madrigal_methods import general
     no_mad = False
 except ImportError:
