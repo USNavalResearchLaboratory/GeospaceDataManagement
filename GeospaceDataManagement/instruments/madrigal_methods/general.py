@@ -933,7 +933,7 @@ def load(fnames, tag='', inst_id='', xarray_coords=None, top_key='top',
 
 
 def download(date_array, inst_code=None, kindat=None, data_path=None,
-             user=None, password=None, url="http://cedar.openmadrigal.org",
+             user=None, password=None, url="https://cedar.openmadrigal.org",
              file_type='hdf5', **kwargs):
     """Download data from Madrigal.
 
@@ -957,7 +957,7 @@ def download(date_array, inst_code=None, kindat=None, data_path=None,
     password : str
         Password for data download. (default=None)
     url : str
-        URL for Madrigal site (default='http://cedar.openmadrigal.org')
+        URL for Madrigal site (default='https://cedar.openmadrigal.org')
     file_type : str
         File format for Madrigal data.  Load routines currently only accepts
         'hdf5' and 'netCDF4', but any of the Madrigal options may be used
@@ -1031,7 +1031,7 @@ def download(date_array, inst_code=None, kindat=None, data_path=None,
 
 
 def get_remote_filenames(inst_code=None, kindat='', user=None, password=None,
-                         web_data=None, url="http://cedar.openmadrigal.org",
+                         web_data=None, url="https://cedar.openmadrigal.org",
                          start=dt.datetime(1900, 1, 1),
                          stop=dt.datetime.now(tz=dt.timezone.utc),
                          date_array=None):
@@ -1058,7 +1058,7 @@ def get_remote_filenames(inst_code=None, kindat='', user=None, password=None,
         Open connection to Madrigal database or None (will initiate using url)
         (default=None)
     url : str
-        URL for Madrigal site (default='http://cedar.openmadrigal.org')
+        URL for Madrigal site (default='https://cedar.openmadrigal.org')
     start : dt.datetime or NoneType
         Starting time for file list, None reverts to default
         (default=dt.datetime(1900, 1, 1))
@@ -1190,7 +1190,7 @@ def good_exp(exp, date_array=None):
 
 def list_remote_files(tag, inst_id, inst_code=None, kindats=None, user=None,
                       password=None, supported_tags=None,
-                      url="http://cedar.openmadrigal.org",
+                      url="https://cedar.openmadrigal.org",
                       two_digit_year_break=None, start=dt.datetime(1900, 1, 1),
                       stop=dt.datetime.now(tz=dt.timezone.utc)):
     """List files available from Madrigal.
@@ -1223,7 +1223,7 @@ def list_remote_files(tag, inst_id, inst_code=None, kindats=None, user=None,
         keys are inst_id, each containing a dict keyed by tag
         where the values file format template strings. (default=None)
     url : str
-        URL for Madrigal site (default='http://cedar.openmadrigal.org')
+        URL for Madrigal site (default='https://cedar.openmadrigal.org')
     two_digit_year_break : int or NoneType
         If filenames only store two digits for the year, then '1900' will be
         added for years >= two_digit_year_break and '2000' will be added for
