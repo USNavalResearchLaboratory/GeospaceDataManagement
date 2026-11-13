@@ -213,7 +213,7 @@ def list_files(tag, inst_id, data_path=None, format_str=None,
 
 
 def download(date_array, tag='', inst_id='', data_path=None, user=None,
-             password=None, url='http://cedar.openmadrigal.org',
+             password=None, url='https://cedar.openmadrigal.org',
              file_type='netCDF4'):
     """Download data from Madrigal.
 
@@ -236,7 +236,7 @@ def download(date_array, tag='', inst_id='', data_path=None, user=None,
     password : str
         Password for data download. (default=None)
     url : str
-        URL for Madrigal site (default='http://cedar.openmadrigal.org')
+        URL for Madrigal site (default='https://cedar.openmadrigal.org')
     file_type : str
         File format for Madrigal data. (default='netCDF4')
 
