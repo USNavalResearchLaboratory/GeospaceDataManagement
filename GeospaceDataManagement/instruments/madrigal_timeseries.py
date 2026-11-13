@@ -293,7 +293,7 @@ def download(date_array, tag, inst_id, data_path, user=None, password=None,
 
 
 def list_remote_files(tag, inst_id, kindat='', user=None, password=None,
-                      url="http://cedar.openmadrigal.org",
+                      url="https://cedar.openmadrigal.org",
                       start=dt.datetime(1900, 1, 1),
                       stop=dt.datetime.now(tz=dt.timezone.utc)):
     """List files available from Madrigal.
@@ -319,7 +319,7 @@ def list_remote_files(tag, inst_id, kindat='', user=None, password=None,
     password : str or NoneType
         Password for data download. (default=None)
     url : str
-        URL for Madrigal site (default='http://cedar.openmadrigal.org')
+        URL for Madrigal site (default='https://cedar.openmadrigal.org')
     start : dt.datetime
         Starting time for file list (default=dt.datetime(1900, 1, 1))
     stop : dt.datetime

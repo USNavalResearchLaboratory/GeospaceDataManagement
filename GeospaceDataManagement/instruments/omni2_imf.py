@@ -34,10 +34,10 @@ magnetic field data using data from:
 ftp://nssdcftp.gsfc.nasa.gov/spacecraft_data/omni/.  The old file had
 originally come from Cedar and had gaps even in places where there was data
 available.  This new Madrigal file is based on the Omni 2 data set, described
-at http://nssdc.gsfc.nasa.gov/omniweb/. (4 May 2004, brideout@haystack.mit.edu)
+at https://omniweb.gsfc.nasa.gov/. (4 May 2004, brideout@haystack.mit.edu)
 
-The OMNI data may be directly downloaded using pysatNASA and is now described
-at: https://omniweb.gsfc.nasa.gov/html/ow_data.html
+The OMNI data may be directly downloaded and is now described at:
+https://omniweb.gsfc.nasa.gov/html/ow_data.html
 
 Warnings
 --------
