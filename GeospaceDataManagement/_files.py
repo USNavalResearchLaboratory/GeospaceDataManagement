@@ -784,7 +784,7 @@ class Files(object):
                 return
 
             if new_files is None:
-                new_files = pds.Series()
+                new_files = pds.Series([], dtype='string')
 
             # Ensure the name of returned Series is None for consistency
             new_files.name = None

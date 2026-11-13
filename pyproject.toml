@@ -66,11 +66,18 @@ doc = [
   "numpydoc >= 1.1",
   "readthedocs-sphinx-search==0.3.2",
   "sphinx >= 3.4.1",
-  "sphinx_rtd_theme >= 1.2.2"
+  "sphinx_rtd_theme >= 1.2.2",
+  "GeospaceDataManagement[instruments]"
 ]
 space_weather = [
   "requests"
 ]
+madrigal = [
+  "h5py",
+  "madrigalWeb",
+  "packaging"
+]
+instruments = ["GeospaceDataManagement[space_weather,madrigal]"]
 
 [project.urls]
 Source = "https://github.com/USNavalResearchLaboratory/GeospaceDataManagement"

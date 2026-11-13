@@ -3311,7 +3311,8 @@ class Instrument(object):
             # Check the updated file range to see if it covers the requested
             # download period
             missing_dates = [adate for adate in date_array
-                             if adate not in self.files.files.index]
+                             if adate not in self.files.files.index
+                             and adate <= self.today()]
             if len(missing_dates) > 0:
                 gdm.logger.warning(''.join([
                     'Unable to download {:d} days '.format(len(missing_dates)),

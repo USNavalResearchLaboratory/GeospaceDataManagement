@@ -4,6 +4,7 @@
 #
 # ----------------------------------------------------------------------------
 # Original Authors: pysat development team (c) 2016, Russell Stoneback
+#                   pysat development team (c) 2020, pysat
 #
 # Modified 2026+
 # This is a U.S. government work and not under copyright protection in the U.S.
@@ -23,29 +24,45 @@ cannot be updated for that test class mid-test.
 
 import datetime as dt
 import numpy as np
+import os
 import pandas as pds
+import pathlib
+import tempfile
 
 import pytest
 
 import GeospaceDataManagement as gdm
 import GeospaceDataManagement.tests.classes.cls_instrument_library as clslib
 from GeospaceDataManagement.utils import generate_instrument_list
+from GeospaceDataManagement.utils.testing import eval_bad_input
 
 # Optional code to pass through user and password info to test instruments
 # dict, keyed by the Instrument, with a list of usernames and passwords
-user_info = {'gdm_testing': {'user': 'gdm_testing',
-                             'password': 'angeline.g.burrell.civ@us.navy.mil'}}
+user_password = {'user': 'gdm_testing',
+                 'password': 'angeline.g.burrell.civ@us.navy.mil'}
+user_info = {'gdm_testing': user_password}
 
 # Initialize tests for sources in gdm.instruments. Keep seperate lists for
 # different optional installation structures to allow testing only the
 # available instruments
 test_instruments = generate_instrument_list(inst_loc=gdm.instruments,
                                             user_info=user_info, subset='test')
+mad_instruments = generate_instrument_list(inst_loc=gdm.instruments,
+                                           subset='madrigal')
 sw_instruments = generate_instrument_list(inst_loc=gdm.instruments, subset='sw')
+
+no_sw = False if len(sw_instruments['names']) > 0 else True
+no_mad = False if len(mad_instruments['names']) > 0 else True
+
+if not no_mad:
+    # Need to update the user info to include the Madrigal Instruments as
+    # they all require downloads
+    user_info.update({module: user_password
+                      for module in mad_instruments['names']})
+
 instruments = clslib.InstLibTests.initialize_test_package(
     clslib.InstLibTests, inst_loc=gdm.instruments, user_info=user_info,
     inst_subset='all')
-no_sw = False if len(sw_instruments['names']) > 0 else True
 
 
 class TestInstruments(clslib.InstLibTests):
@@ -240,4 +257,68 @@ class TestInstruments(clslib.InstLibTests):
 
         # Test that 45 days of F10.7 data are available
         assert len(self.test_inst['f107']) == 45
+        return
+
+
+# Tests specifically for the Madrigal instruments
+@pytest.mark.skipif(no_mad, reason="Madrigal test only")
+class TestInstrumentLoadError(object):
+    """Class for unit testing errors raised when loading data."""
+
+    def setup_class(self):
+        """Initialize the testing setup once before all tests are run."""
+
+        # Use a temporary directory so that the user's setup is not altered.
+        self.tempdir = tempfile.TemporaryDirectory(
+            ignore_cleanup_errors=True)
+        self.saved_path = gdm.params['data_dirs']
+        gdm.params._set_data_dirs(path=self.tempdir.name, store=False)
+        return
+
+    def teardown_class(self):
+        """Clean up downloaded files and parameters from tests."""
+
+        gdm.params._set_data_dirs(self.saved_path, store=False)
+        # Remove the temporary directory. In Windows, this occasionally fails
+        # by raising a wide variety of different error messages. Python 3.10+
+        # can handle this, but lower Python versions cannot.
+        self.tempdir.cleanup()
+
+        del self.saved_path, self.tempdir
+        return
+
+    def setup_method(self):
+        """Run before every method to create a clean testing setup."""
+        self.inst_kwargs = [{'inst_module': gdm.instruments.gnss_tec,
+                             'tag': 'los', 'los_method': 'site'}]
+        self.load_time = dt.datetime(2001, 1, 1)
+        self.fake_file = ''
+        return
+
+    def teardown_method(self):
+        """Run after every method to clean up previous testing."""
+        if os.path.isfile(self.fake_file):
+            os.remove(self.fake_file)
+
+        del self.inst_kwargs, self.load_time, self.fake_file
+        return
+
+    def test_bad_los_value(self):
+        """Test ValueError when the `los_value` is omitted."""
+        inst = gdm.Instrument(**self.inst_kwargs[0])
+
+        # Ensure a file is available
+        if self.load_time not in inst.files.files.keys():
+            self.fake_file = os.path.join(
+                inst.files.data_path,
+                self.inst_kwargs[0]['inst_module'].supported_tags[inst.inst_id][
+                    inst.tag].format(file_type='hdf5').format(
+                        year=self.load_time.year, month=self.load_time.month,
+                        day=self.load_time.day, version=1))
+            gdm.utils.files.check_and_make_path(inst.files.data_path)
+            pathlib.Path(self.fake_file).touch()
+            inst = gdm.Instrument(**self.inst_kwargs[0])
+
+        eval_bad_input(inst.load, ValueError, "must specify a valid",
+                       input_kwargs={'date': self.load_time})
         return
