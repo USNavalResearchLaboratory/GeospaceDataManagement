@@ -1016,6 +1016,7 @@ def download(date_array, inst_code=None, kindat=None, data_path=None,
         except ValueError as verr:
             if iretry + 1 < retry:
                 time.sleep(sleep_sec)
+            verr = str(verr)
 
     if web_data is None:
         raise ValueError(''.join(['unable to connect to Madrigal [', url, '] ',
@@ -1178,6 +1179,7 @@ def get_remote_filenames(inst_code=None, kindat='', user=None, password=None,
         except ValueError as verr:
             if iretry + 1 < retry:
                 time.sleep(sleep_sec)
+            verr = str(verr)
 
     if len(exp_list) == 0:
         raise ValueError('unable to retrieve Madrigal experiments: {:}'.format(
