@@ -975,7 +975,8 @@ def download(date_array, inst_code=None, kindat=None, data_path=None,
     Raises
     ------
     ValueError
-        If the specified input type or Madrigal experiment codes are unknown
+        If the specified input type or Madrigal experiment codes are unknown,
+        or if a connection to the Madrigal website cannot be obtained.
 
     Notes
     -----
@@ -1005,13 +1006,20 @@ def download(date_array, inst_code=None, kindat=None, data_path=None,
         stop = date_array.shift().max()
 
     # Initialize the connection to Madrigal
+    web_data = None
+    verr = ''
     for iretry in range(retry):
         try:
             gdm.logger.info('Connecting to Madrigal')
             web_data = madrigalWeb.MadrigalData(url)
             gdm.logger.info('Connection established.')
-        except ValueError:
-            time.sleep(sleep_sec)
+        except ValueError as verr:
+            if iretry + 1 < retry:
+                time.sleep(sleep_sec)
+
+    if web_data is None:
+        raise ValueError(''.join(['unable to connect to Madrigal [', url, '] ',
+                                  'after {:} tries: {:}'.format(retry, verr)]))
 
     files = get_remote_filenames(inst_code=inst_code, kindat=kindat,
                                  user=user, password=password,
@@ -1029,10 +1037,21 @@ def download(date_array, inst_code=None, kindat=None, data_path=None,
             local_file = ".".join(split_file)
 
         if not os.path.isfile(local_file):
-            fstr = ''.join(('Downloading data for ', local_file))
-            gdm.logger.info(fstr)
-            web_data.downloadFile(mad_file.name, local_file, user, password,
-                                  "GeospaceDataManagement", format=file_type)
+            gdm.logger.info(''.join(('Downloading data for ', local_file)))
+            for iretry in range(retry):
+                try:
+                    web_data.downloadFile(mad_file.name, local_file, user,
+                                          password, "GeospaceDataManagement",
+                                          format=file_type)
+                    break
+                except ValueError:
+                    if iretry + 1 < retry:
+                        time.sleep(sleep_sec)
+                        gdm.logger.info('Retrying download ({:d}/{:d})'.format(
+                            iretry + 2, retry))
+                    else:
+                        gdm.logger.warning(''.join(('Download failed for ',
+                                                    local_file)))
         else:
             estr = ''.join((local_file, ' already exists. Skipping.'))
             gdm.logger.info(estr)
@@ -1143,9 +1162,12 @@ def get_remote_filenames(inst_code=None, kindat='', user=None, password=None,
                 web_data = madrigalWeb.MadrigalData(url)
                 break
             except ValueError:
-                time.sleep(sleep_sec)
+                if iretry + 1 < retry:
+                    time.sleep(sleep_sec)
 
     # Get list of experiments for instrument from in desired range
+    exp_list = list()
+    verr = ''
     for iretry in range(retry):
         try:
             exp_list = web_data.getExperiments(
@@ -1153,8 +1175,13 @@ def get_remote_filenames(inst_code=None, kindat='', user=None, password=None,
                 start.minute, start.second, stop.year, stop.month, stop.day,
                 stop.hour, stop.minute, stop.second)
             break
-        except ValueError:
-            time.sleep(sleep_sec)
+        except ValueError as verr:
+            if iretry + 1 < retry:
+                time.sleep(sleep_sec)
+
+    if len(exp_list) == 0:
+        raise ValueError('unable to retrieve Madrigal experiments: {:}'.format(
+            verr))
 
     # Iterate over experiments to grab files for each one
     files = list()
