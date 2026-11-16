@@ -935,7 +935,7 @@ def load(fnames, tag='', inst_id='', xarray_coords=None, top_key='top',
 
 def download(date_array, inst_code=None, kindat=None, data_path=None,
              user=None, password=None, url="https://cedar.openmadrigal.org",
-             file_type='hdf5', **kwargs):
+             file_type='hdf5', retry=5, sleep_sec=10, **kwargs):
     """Download data from Madrigal.
 
     Parameters
@@ -963,6 +963,11 @@ def download(date_array, inst_code=None, kindat=None, data_path=None,
         File format for Madrigal data.  Load routines currently only accepts
         'hdf5' and 'netCDF4', but any of the Madrigal options may be used
         here. (default='hdf5')
+        (default=None)
+    retry : int
+        Number of retries for accessing Madrigal (default=5)
+    sleep_sec : int
+        Number of seconds to sleep before retrying a Madrigal call (default=10)
     **kwargs : dict
         Additional kwarg catch, allows general use when tag/inst_id are not
         needed for a given instrument.
@@ -1000,9 +1005,13 @@ def download(date_array, inst_code=None, kindat=None, data_path=None,
         stop = date_array.shift().max()
 
     # Initialize the connection to Madrigal
-    gdm.logger.info('Connecting to Madrigal')
-    web_data = madrigalWeb.MadrigalData(url)
-    gdm.logger.info('Connection established.')
+    for iretry in range(retry):
+        try:
+            gdm.logger.info('Connecting to Madrigal')
+            web_data = madrigalWeb.MadrigalData(url)
+            gdm.logger.info('Connection established.')
+        except ValueError:
+            time.sleep(sleep_sec)
 
     files = get_remote_filenames(inst_code=inst_code, kindat=kindat,
                                  user=user, password=password,
@@ -1129,7 +1138,12 @@ def get_remote_filenames(inst_code=None, kindat='', user=None, password=None,
 
     # Open connection to Madrigal
     if web_data is None:
-        web_data = madrigalWeb.MadrigalData(url)
+        for iretry in range(retry):
+            try:
+                web_data = madrigalWeb.MadrigalData(url)
+                break
+            except ValueError:
+                time.sleep(sleep_sec)
 
     # Get list of experiments for instrument from in desired range
     for iretry in range(retry):
