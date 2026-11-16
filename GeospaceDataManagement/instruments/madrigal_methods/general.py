@@ -1013,6 +1013,7 @@ def download(date_array, inst_code=None, kindat=None, data_path=None,
             gdm.logger.info('Connecting to Madrigal')
             web_data = madrigalWeb.MadrigalData(url)
             gdm.logger.info('Connection established.')
+            break
         except ValueError as verr:
             if iretry + 1 < retry:
                 time.sleep(sleep_sec)
