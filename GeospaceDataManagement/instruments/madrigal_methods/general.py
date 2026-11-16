@@ -1141,7 +1141,6 @@ def get_remote_filenames(inst_code=None, kindat='', user=None, password=None,
             break
         except ValueError:
             time.sleep(sleep_sec)
-            
 
     # Iterate over experiments to grab files for each one
     files = list()
