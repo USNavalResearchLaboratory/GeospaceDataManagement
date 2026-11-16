@@ -18,6 +18,7 @@ import gzip
 import numpy as np
 import os
 import pandas as pds
+import time
 import xarray as xr
 
 import h5py
@@ -974,7 +975,7 @@ def download(date_array, inst_code=None, kindat=None, data_path=None,
     Notes
     -----
     The user's names should be provided in field user. Ruby Payne-Scott should
-    be entered as Ruby+Payne-Scott
+    be entered as 'Ruby Payne-Scott'
 
     The password field should be the user's email address. These parameters
     are passed to Madrigal when downloading.
@@ -1034,7 +1035,7 @@ def get_remote_filenames(inst_code=None, kindat='', user=None, password=None,
                          web_data=None, url="https://cedar.openmadrigal.org",
                          start=dt.datetime(1900, 1, 1),
                          stop=dt.datetime.now(tz=dt.timezone.utc),
-                         date_array=None):
+                         date_array=None, retry=5, sleep_sec=10):
     """Retrieve the remote filenames for a specified Madrigal experiment.
 
     Parameters
@@ -1069,6 +1070,10 @@ def get_remote_filenames(inst_code=None, kindat='', user=None, password=None,
         Array of datetimes to download data for. The sequence of dates need not
         be contiguous and will be used instead of start and stop if supplied.
         (default=None)
+    retry : int
+        Number of retries for accessing Madrigal (default=5)
+    sleep_sec : int
+        Number of seconds to sleep before retrying a Madrigal call (default=10)
 
     Returns
     -------
@@ -1127,11 +1132,16 @@ def get_remote_filenames(inst_code=None, kindat='', user=None, password=None,
         web_data = madrigalWeb.MadrigalData(url)
 
     # Get list of experiments for instrument from in desired range
-    exp_list = web_data.getExperiments(inst_code, start.year, start.month,
-                                       start.day, start.hour, start.minute,
-                                       start.second, stop.year, stop.month,
-                                       stop.day, stop.hour, stop.minute,
-                                       stop.second)
+    for iretry in range(retry):
+        try:
+            exp_list = web_data.getExperiments(
+                inst_code, start.year, start.month, start.day, start.hour,
+                start.minute, start.second, stop.year, stop.month, stop.day,
+                stop.hour, stop.minute, stop.second)
+            break
+        except ValueError:
+            time.sleep(sleep_sec)
+            
 
     # Iterate over experiments to grab files for each one
     files = list()
