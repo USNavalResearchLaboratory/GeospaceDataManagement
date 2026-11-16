@@ -250,7 +250,7 @@ def load(fnames, tag='', inst_id=''):
     """Load the JRO ISR data.
 
     Parameters
-    -----------
+    ----------
     fnames : list
         List of filenames
     tag : str
@@ -261,7 +261,7 @@ def load(fnames, tag='', inst_id=''):
         This input is nominally provided by GeospaceDataManagement. (default='')
 
     Returns
-    --------
+    -------
     data : xarray.Dataset
         Object containing satellite data
 

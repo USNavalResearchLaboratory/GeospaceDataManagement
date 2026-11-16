@@ -175,7 +175,7 @@ def load(fnames, tag='', inst_id=''):
     """Load the OMNI2 IMF data.
 
     Parameters
-    -----------
+    ----------
     fnames : list
         List of filenames
     tag : str
@@ -186,7 +186,7 @@ def load(fnames, tag='', inst_id=''):
         This input is nominally provided by GeospaceDataManagement. (default='')
 
     Returns
-    --------
+    -------
     data : xr.Dataset
         Object containing IMF data
 

@@ -184,7 +184,7 @@ def load(fnames, tag='', inst_id='', unit_label='units', name_label='name',
     """Load the NGDC AE data.
 
     Parameters
-    -----------
+    ----------
     fnames : list
         List of filenames
     tag : str
@@ -203,7 +203,7 @@ def load(fnames, tag='', inst_id='', unit_label='units', name_label='name',
         Meta data label for notes (default='notes')
 
     Returns
-    --------
+    -------
     data : xr.Dataset
         Object containing satellite data
 
