@@ -243,6 +243,27 @@ class TestLocal(object):
         assert str(verr).find(msg) >= 0
         return
 
+    def test_build_madrigal_datetime_index(self):
+        """Test the datetime index building tool success."""
+        self.out = general.build_madrigal_datetime_index(
+            pds.DataFrame({'year': [2020, 2020], 'month': [1, 2],
+                           'day': [3, 4], 'hour': [5, 6], 'min': [7, 8],
+                           'sec': [9, 10], 'other': ['fun', 'data']}))
+
+        testing.assert_isinstance(self.out, pds.Series)
+        assert self.out[0].to_pydatetime() == dt.datetime(2020, 1, 3, 5, 7, 9)
+        return
+
+    def test_build_madrigal_datetime_index_bad_keys(self):
+        """Test the datetime index building tool failure with bad input."""
+        self.out = pds.DataFrame({'year': [2020, 2020], 'month': [1, 2],
+                                  'day': [3, 4], 'hour': [5, 6], 'min': [7, 8],
+                                  'seconds': [9, 10], 'other': ['fun', 'data']})
+        testing.eval_bad_input(general.build_madrigal_datetime_index,
+                               ValueError, 'unable to construct time index',
+                               input_args=[self.out])
+        return
+
 
 @pytest.mark.skipif(no_mad, reason="Madrigal test only")
 class TestErrors(object):
@@ -466,7 +487,7 @@ class TestSimpleFiles(object):
 
         # Assert the data columns and number of values are the same
         assert len(header) == len(self.data.data_vars.keys())
-        assert len(self.data.index) == len(tst_lines) - 1
+        assert len(self.data['time']) == len(tst_lines) - 1
 
         # Test the values for the meta data name and the first data value
         for i, col in enumerate(header):
