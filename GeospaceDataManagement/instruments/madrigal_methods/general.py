@@ -620,12 +620,11 @@ def build_madrigal_datetime_index(mad_data):
                                    repr(time_keys)]))
 
     # Get the UT seconds of day and build the datetime index
-    uts = 3600.0 * mad_data.loc[:, 'hour'].values + 60.0 * mad_data.loc[
-        :, 'min'].values + mad_data.loc[:, 'sec'].values
+    uts = 3600.0 * mad_data['hour'].values + 60.0 * mad_data[
+        'min'].values + mad_data['sec'].values
     data_time = gdm.utils.time.create_datetime_index(
-        year=mad_data.loc[:, 'year'].values,
-        month=mad_data.loc[:, 'month'].values,
-        day=mad_data.loc[:, 'day'].values, uts=uts)
+        year=mad_data['year'].values, month=mad_data['month'].values,
+        day=mad_data['day'].values, uts=uts)
 
     return data_time
 
