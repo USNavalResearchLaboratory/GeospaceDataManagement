@@ -28,8 +28,8 @@ tag
 inst_id
     - ''
 
-Note
-----
+Notes
+-----
 Downloads data from ftp.gfz-potsdam.de or SWPC. These files also contain ap
 data (with the GFZ data additionally containing Cp data), and so the additional
 data files will be saved to the appropriate data directories to avoid multiple
@@ -145,8 +145,8 @@ def load(fnames, tag='', inst_id=''):
     result : pandas.DataFrame
         Object containing satellite data
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """
@@ -202,8 +202,8 @@ def list_files(tag='', inst_id='', data_path='', format_str=None):
     files : gdm._files.Files
         A class containing the verified available files
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """
@@ -246,8 +246,8 @@ def download(date_array, tag, inst_id, data_path, mock_download_dir=None,
         If an unknown mock download directory is supplied or there is a problem
         downloading the data.
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     Warnings

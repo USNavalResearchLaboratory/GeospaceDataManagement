@@ -90,8 +90,8 @@ def load(fnames, tag='', inst_id=''):
     data : xr.Dataset
         Object containing satellite data
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """
@@ -131,8 +131,8 @@ def list_files(tag='', inst_id='', data_path='', format_str=None):
     files : gdm.Files
         A class containing the verified available files
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """
@@ -171,8 +171,8 @@ def download(date_array, tag, inst_id, data_path, mock_download_dir=None):
         If the data link has an unexpected format or if an unknown mock
         download directory is supplied.
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """

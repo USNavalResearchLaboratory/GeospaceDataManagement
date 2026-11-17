@@ -25,8 +25,8 @@ inst_id
     - '30min' Half-hourly resolution indices
     - '60min' Hourly resolution indices
 
-Note
-----
+Notes
+-----
 Downloads data from ftp.gfz-potsdam.de
 
 Examples
@@ -104,8 +104,8 @@ def load(fnames, tag='', inst_id=''):
     result : xr.Dataset
         Object containing satellite data
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """
@@ -147,8 +147,8 @@ def list_files(tag='', inst_id='', data_path='', format_str=None):
     files : gdm._files.Files
         A class containing the verified available files
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """
@@ -193,8 +193,8 @@ def download(date_array, tag, inst_id, data_path, update_files=False,
         If True, uses certificate verification; if False will not do so
         (default=True)
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     Warnings
