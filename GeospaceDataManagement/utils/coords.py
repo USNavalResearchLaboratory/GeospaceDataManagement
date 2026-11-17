@@ -409,7 +409,7 @@ def geodetic_to_geocentric(lat_in, lon_in=None, inverse=False):
         Earth radius [km] (geocentric/detic if inverse=False/True)
 
     Notes
-    ------
+    -----
     Uses WGS-84 values. Tested against:
     https://www.vcalc.com/wiki/vcalc/geodetic+to+geocentric+latitude
 
