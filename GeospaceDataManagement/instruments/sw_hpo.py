@@ -131,7 +131,7 @@ def list_files(tag='', inst_id='', data_path='', format_str=None):
     """List local files for the requested Instrument tag.
 
     Parameters
-    -----------
+    ----------
     tag : str
         Instrument tag, accepts any value from `tags`. (default='')
     inst_id : str

@@ -80,8 +80,8 @@ def calc_measurement_loc(inst, unit_label='units', name_label='name',
         variable is found, or if multiple range variables are found.
 
 
-    Note
-    ----
+    Notes
+    -----
     Adds 'gdlat#', 'gdlon#' to the instrument, for all directions that
     have azimuth and elevation keys that match the format 'eldir#' and 'azdir#'
     or 'azm' and 'elm' (in this case # will be replaced with '_bm')
