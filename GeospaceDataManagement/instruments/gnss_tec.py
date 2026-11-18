@@ -340,7 +340,7 @@ def load(fnames, tag='', inst_id='', los_method='site', los_value=None,
             gnss_network=gnss_network, unit_label=unit_label,
             name_label=name_label, desc_label=desc_label)
 
-    if len(data.dims.keys()) > 0:
+    if len(data.sizes.keys()) > 0:
         # Squeeze the kindat and kinst 'coordinates', but keep them as floats
         squeeze_dims = np.array(['kindat', 'kinst'])
         squeeze_mask = [sdim in data.coords for sdim in squeeze_dims]
