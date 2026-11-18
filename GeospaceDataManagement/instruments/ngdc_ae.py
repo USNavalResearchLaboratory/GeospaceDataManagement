@@ -148,7 +148,8 @@ def clean(self):
 
                 # The 'clean' and 'dusty' levels replace the parameter error
                 # value of -32766 with NaN
-                self[dvar][self[dvar] == -32766] = np.nan
+                nan_mask = self[dvar] == -32766
+                self[dvar] = self[dvar].where(~nan_mask, other=np.nan)
 
     return
 
@@ -271,8 +272,9 @@ def load(fnames, tag='', inst_id='', unit_label='units', name_label='name',
             year=year[dmask], month=month[dmask], day=day[dmask], uts=uts)
 
         # Load the data into a pandas DataFrame
-        data = pds.DataFrame.from_records(file_data[dmask], columns=labels,
-                                          index=tindex)
+        data_dict = {label: file_data[dmask][label] for label in labels}
+        data = pds.DataFrame.from_dict(data_dict, orient='columns')
+        data = data.set_index(tindex)
         data.index.name = 'time'
 
     # Ensure that data is at least an empty Dataset

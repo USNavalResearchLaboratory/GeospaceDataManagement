@@ -296,7 +296,8 @@ def load_los(fnames, los_method, los_value, los_range=0, gnss_network='all',
             break
 
     # Load data into frame, with labels from metadata
-    data = pds.DataFrame.from_records(data, columns=labels)
+    data_dict = {label: data[:][label] for label in labels}
+    data = pds.DataFrame.from_dict(data_dict)
 
     if not data.empty:
         # Enforce lowercase variable names
