@@ -563,7 +563,7 @@ def get_meta_from_hdf5(file_ptr, meta_dict, top_key='top', unit_label='units',
         name_string = item[0].decode('UTF-8')
         unit_string = item[3].decode('UTF-8')
         desc_string = item[1].decode('UTF-8')
-        file_labels.append(name_string)
+        file_labels.append(name_string.lower())
 
         # Update metadata if any updatable values are missing
         if name_string.lower() not in meta_dict:
@@ -866,6 +866,7 @@ def load(fnames, tag='', inst_id='', xarray_coords=None, top_key='top',
                 filed = h5py.File(fname, 'r')
                 file_data = filed['Data']['Table Layout']
 
+                # Output labels are lowercase
                 new_labels = get_meta_from_hdf5(filed, meta, top_key=top_key,
                                                 unit_label=unit_label,
                                                 name_label=name_label,
@@ -873,23 +874,21 @@ def load(fnames, tag='', inst_id='', xarray_coords=None, top_key='top',
                 if len(labels) == 0:
                     labels = new_labels
 
-                # Load data into frame, with labels from meta data
-                ldata = pds.DataFrame.from_records(file_data, columns=labels)
-
-                # Enforce lowercase variable names
-                ldata.columns = [item.lower() for item in ldata.columns]
+                # Load data into a dictionary, with labels from meta data
+                file_dict = {label: file_data[:][label] for label in labels}
+                ldata = pds.DataFrame.from_dict(file_dict)
 
             # Extended processing is the same for simple and HDF5 files
             #
             # Construct datetime index from times
-            time = build_madrigal_datetime_index(ldata)
+            ltime = build_madrigal_datetime_index(ldata)
 
             # Declare index or recast as xarray
             if coord_len > 0:
-                ldata = convert_pandas_to_xarray(xarray_coords, ldata, time)
+                ldata = convert_pandas_to_xarray(xarray_coords, ldata, ltime)
             else:
                 # Set the index to time
-                ldata.index = time
+                ldata.index = ltime
                 ldata.index.name = 'time'
 
                 # Recast as an xarray object
@@ -897,7 +896,7 @@ def load(fnames, tag='', inst_id='', xarray_coords=None, top_key='top',
 
                 # Raise a logging warning if there are duplicate times. This
                 # means the data should be stored as an xarray Dataset
-                if np.any(time.duplicated()):
+                if np.any(ltime.duplicated()):
                     gdm.logger.warning(''.join([
                         "duplicated time indices, consider specifing ",
                         "additional coordinates"]))
