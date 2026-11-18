@@ -1006,7 +1006,7 @@ def download(date_array, inst_code=None, kindat=None, data_path=None,
 
     # Initialize the connection to Madrigal
     web_data = None
-    verr = ''
+    vmsg = ''
     for iretry in range(retry):
         try:
             gdm.logger.info('Connecting to Madrigal')
@@ -1016,11 +1016,11 @@ def download(date_array, inst_code=None, kindat=None, data_path=None,
         except ValueError as verr:
             if iretry + 1 < retry:
                 time.sleep(sleep_sec)
-            verr = str(verr)
+            vmsg = str(verr)
 
     if web_data is None:
         raise ValueError(''.join(['unable to connect to Madrigal [', url, '] ',
-                                  'after {:} tries: {:}'.format(retry, verr)]))
+                                  'after {:} tries: {:}'.format(retry, vmsg)]))
 
     files = get_remote_filenames(inst_code=inst_code, kindat=kindat,
                                  user=user, password=password,
@@ -1168,7 +1168,7 @@ def get_remote_filenames(inst_code=None, kindat='', user=None, password=None,
 
     # Get list of experiments for instrument from in desired range
     exp_list = list()
-    verr = ''
+    vmsg = ''
     for iretry in range(retry):
         try:
             exp_list = web_data.getExperiments(
@@ -1179,11 +1179,11 @@ def get_remote_filenames(inst_code=None, kindat='', user=None, password=None,
         except ValueError as verr:
             if iretry + 1 < retry:
                 time.sleep(sleep_sec)
-            verr = str(verr)
+            vmsg = str(verr)
 
     if len(exp_list) == 0:
         raise ValueError('unable to retrieve Madrigal experiments: {:}'.format(
-            verr))
+            vmsg))
 
     # Iterate over experiments to grab files for each one
     files = list()
