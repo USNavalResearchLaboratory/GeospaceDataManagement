@@ -906,7 +906,8 @@ class Instrument(object):
                     # used indices for each dimension instead of paired indices,
                     # we invoke meshgrid to get the full range of index
                     # combinations
-                    if np.any([len(ikeys) > 0 for ikeys in ind_keys]):
+                    if np.any([len(gdm.utils.listify(ikeys)) > 0
+                               for ikeys in ind_keys]):
                         # Only update if there is something to update
                         sel_dat = self.data[var_key].values.copy()
                         sel_ind = np.meshgrid(ind_keys)
