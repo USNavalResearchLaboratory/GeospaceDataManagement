@@ -29,8 +29,8 @@ tag
 inst_id
     - ''
 
-Note
-----
+Notes
+-----
 Downloads data from ftp.gfz-potsdam.de or SWPC. These files also contain Kp
 data (with the GFZ data additionally containing Cp data), and so the additional
 data files will be saved to the appropriate data directories to avoid multiple
@@ -150,8 +150,8 @@ def load(fnames, tag='', inst_id=''):
     result : xr.Dataset
         Object containing satellite data
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataMangagement. Not intended for direct use by user.
 
     """
@@ -194,7 +194,7 @@ def list_files(tag='', inst_id='', data_path='', format_str=None):
     """List local files for the requested Instrument tag.
 
     Parameters
-    -----------
+    ----------
     tag : str
         Instrument tag, accepts any value from `tags`. (default='')
     inst_id : str
@@ -210,8 +210,8 @@ def list_files(tag='', inst_id='', data_path='', format_str=None):
     files : gdm._files.Files
         A class containing the verified available files
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataMangagement. Not intended for direct use by user.
 
     """
@@ -249,8 +249,8 @@ def download(date_array, tag, inst_id, data_path, mock_download_dir=None,
         If True, uses certificate verification; if False will not do so. Only
         used for 'def' and 'now' tags (default=True)
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataMangagement. Not intended for direct use by user.
 
     Warnings

@@ -102,8 +102,8 @@ def clean(inst):
     max_status : int
         Maximum allowed status
 
-    Note
-    ----
+    Notes
+    -----
     gdm Instrument is modified in place
 
     """
@@ -148,8 +148,8 @@ def list_files(name, tag='', inst_id='', data_path='', format_str=None):
     files : gdm.Files
         A class containing the verified available files
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """
@@ -192,8 +192,8 @@ def download(date_array, name, tag='', inst_id='', data_path='', now=None,
         If an unknown mock download directory is supplied or the file format
         changes.
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataMangement. Not intended for direct use by user.
 
     Warnings

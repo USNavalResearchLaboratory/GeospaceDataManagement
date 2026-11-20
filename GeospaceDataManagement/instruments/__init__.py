@@ -10,6 +10,16 @@ __all__ = list(__test__)
 
 from GeospaceDataManagement.instruments import methods  # noqa 401
 try:
+    from GeospaceDataManagement.instruments import madrigal_methods  # noqa 401
+    __madrigal__ = ['dmsp_ivm', 'dmsp_ssj', 'gnss_tec', 'jro_isr',
+                    'madrigal_dst', 'madrigal_geoind', 'madrigal_timeseries',
+                    'ngdc_ae', 'omni2_imf']
+    __all__.extend(__madrigal__)
+except ImportError as ierr:
+    import GeospaceDataManagement
+    GeospaceDataManagement.logger.info(ierr)
+
+try:
     from GeospaceDataManagement.instruments import sw_methods  # noqa 401
     __sw__ = ['ace_epam', 'ace_mag', 'ace_sis', 'ace_swepam', 'norp_rf',
               'sw_ae', 'sw_al', 'sw_ap', 'sw_apo', 'sw_au', 'sw_cp',

@@ -25,8 +25,8 @@ tag
 inst_id
     - ''
 
-Note
-----
+Notes
+-----
 Downloads data from ftp.gfz-potsdam.de (GFZ). These files also contain ap and Kp
 data, and so the additional data files will be saved to the appropriate data
 directories to avoid multiple downloads.
@@ -115,8 +115,8 @@ def load(fnames, tag='', inst_id=''):
     data : xr.Dataset
         Object containing satellite data
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """

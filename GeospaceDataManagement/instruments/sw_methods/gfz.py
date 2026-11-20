@@ -211,8 +211,8 @@ def kp_ap_cp_download(platform, name, date_array, tag, inst_id, data_path,
     IOError
         If an unknown mock download directory is supplied.
 
-    Note
-    ----
+    Notes
+    -----
     Note that the download path for the complementary Instrument will use
     the standard GeospaceDataManagement data paths
 

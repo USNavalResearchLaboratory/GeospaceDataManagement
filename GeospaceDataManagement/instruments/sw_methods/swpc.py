@@ -57,8 +57,8 @@ def daily_dsd_download(name, today, data_path, mock_download_dir=None):
         If an unknown mock download directory is supplied or the desired file
         is missing.
 
-    Note
-    ----
+    Notes
+    -----
     Note that the download path for the complementary Instrument will use
     the standard GeospaceDataManagement data paths
 
@@ -128,8 +128,8 @@ def old_indices_dsd_download(name, date_array, data_path, local_files, today,
     IOError
         If an unknown mock download directory is supplied.
 
-    Note
-    ----
+    Notes
+    -----
     Note that the download path for the complementary Instrument will use
     the standard data paths
 
@@ -419,8 +419,8 @@ def solar_geomag_predictions_download(name, date_array, data_path,
         If an unknown mock download directory is supplied or the desired file
         is missing.
 
-    Note
-    ----
+    Notes
+    -----
     Note that the download path for the complementary Instrument will use
     the standard data paths
 
@@ -595,8 +595,8 @@ def geomag_forecast_download(name, date_array, data_path,
         If an unknown mock download directory is supplied or the desired file
         is missing.
 
-    Note
-    ----
+    Notes
+    -----
     Note that the download path for the complementary Instrument will use
     the standard data paths
 
@@ -722,8 +722,8 @@ def kp_ap_recent_download(name, date_array, data_path, mock_download_dir=None):
         If an unknown mock download directory is supplied or the desired file
         is missing.
 
-    Note
-    ----
+    Notes
+    -----
     Note that the download path for the complementary Instrument will use
     the standard data paths
 
@@ -835,8 +835,8 @@ def recent_ap_f107_download(name, date_array, data_path,
         If an unknown mock download directory is supplied or the desored file
         is missing.
 
-    Note
-    ----
+    Notes
+    -----
     Note that the download path for the complementary Instrument will use
     the standard data paths
 
@@ -990,8 +990,8 @@ def find_issue_date(file_txt, date_fmt="%H%M UT %d %b %Y"):
         Datetime object with time that the file was issued or None if an
         error is encountered
 
-    Note
-    ----
+    Notes
+    -----
     Assumes the file has a line formatted as: ':Issued: <date_fmt>\n'
 
     """

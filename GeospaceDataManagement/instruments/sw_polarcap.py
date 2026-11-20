@@ -24,8 +24,8 @@ tag
 inst_id
     - ''
 
-Note
-----
+Notes
+-----
 Downloads data from SWPC. These files also contain other data indices, and so
 the additional data files will be saved to the appropriate data directories to
 avoid multiple downloads.
@@ -126,8 +126,8 @@ def load(fnames, tag='', inst_id=''):
     data : xr.Dataset
         Object containing satellite data
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """
@@ -168,8 +168,8 @@ def download(date_array, tag, inst_id, data_path, mock_download_dir=None):
     IOError
         If an unknown mock download directory is supplied.
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     Warnings

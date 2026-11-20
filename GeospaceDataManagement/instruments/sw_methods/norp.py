@@ -103,8 +103,8 @@ def daily_rf_downloads(data_path, mock_download_dir=None, start=None,
         If the data link has an unexpected format or an unknown mock download
         directory is supplied.
 
-    Note
-    ----
+    Notes
+    -----
     Saves data in month-long files
 
     """

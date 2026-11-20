@@ -244,8 +244,8 @@ def convert_3hr_kp_to_ap(kp_inst, var_name='Kp', unit_label='units',
     ValueError
         If `var_name` is not present in `kp_inst`.
 
-    Note
-    ----
+    Notes
+    -----
     Conversion between ap and Kp indices is described at:
     https://www.ngdc.noaa.gov/stp/GEOMAG/kp_ap.html
 
@@ -332,8 +332,8 @@ def calc_daily_Ap(ap_inst, ap_name='3hr_ap', daily_name='Ap',
     ValueError
         If `ap_name` or `daily_name` aren't present in `ap_inst`
 
-    Note
-    ----
+    Notes
+    -----
     Ap is the mean of the 3hr ap indices measured for a given day
 
     Option for running average is included since this information is used
@@ -444,8 +444,8 @@ def filter_geomag(inst, min_kp=0, max_kp=9, filter_time=24, kp_inst=None,
     IOError
         If no Kp data is available to load
 
-    Note
-    ----
+    Notes
+    -----
     Loads Kp data for the same timeframe covered by inst and sets inst.data to
     NaN for times when Kp > max_kp or Kp < min_kp and for filter_time after Kp
     drops below max_kp.
@@ -662,8 +662,8 @@ def combine_kp(standard_inst=None, recent_inst=None, forecast_inst=None,
     ValueError
         If only one Kp instrument or bad times are provided
 
-    Note
-    ----
+    Notes
+    -----
     Merging prioritizes the standard data, then the recent data, and finally
     the forecast data.
 

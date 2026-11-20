@@ -32,8 +32,8 @@ tag
 inst_id
     *List supported inst_id strings here*
 
-Note
-----
+Notes
+-----
 - Optional section, remove if no notes
 
 Warnings
@@ -147,8 +147,8 @@ def clean(self):
     more stringent level and re-applied after instantiation. The clean method
     is applied after default every time data is loaded.
 
-    Note
-    ----
+    Notes
+    -----
     - 'clean' All parameters are good, suitable for scientific studies
     - 'dusty' Most parameters are good, requires instrument familiarity
     - 'dirty' There are data areas that have issues, use with caution
@@ -213,8 +213,8 @@ def list_files(tag='', inst_id='', data_path='', format_str=None):
         'v{version:02d}r{revision:04d}.NC'
 
 
-    Note
-    ----
+    Notes
+    -----
     The returned Series should not have any duplicate datetimes. If there are
     multiple versions of a file the most recent version should be kept and the
     rest discarded. This routine uses the `gdm.Files.from_os` constructor,
@@ -374,8 +374,8 @@ def list_remote_files(tag, inst_id, user=None, password=None):
         User password to be passed along to resource with relevant data.
         (default=None)
 
-    Note
-    ----
+    Notes
+    -----
     If defined, the expected return variable is a pandas.Series formatted for
     the Files class (gmd._files.Files) containing filenames and indexed by
     date and time

@@ -119,8 +119,8 @@ def load(fnames, tag='', inst_id=''):
     --------
     gdm.instruments.methods.general.load_csv_data
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """
@@ -177,8 +177,8 @@ def list_files(tag='', inst_id='', data_path='', format_str=None):
     out_files : gdm._files.Files
         A class containing the verified available files
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """
