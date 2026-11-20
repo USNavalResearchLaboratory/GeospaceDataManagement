@@ -93,6 +93,10 @@ def smooth_ram_drifts(inst, rpa_flag_key=None, rpa_flag_max=1,
     xr.Dataset.rolling
 
     """
+    # Ensure there is data before continuing
+    if inst.empty:
+        return
+
     # Select the desired data for averaging
     if rpa_flag_key is None:
         rpa_idx = list()
