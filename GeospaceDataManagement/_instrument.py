@@ -860,8 +860,11 @@ class Instrument(object):
 
         epoch_names = self._get_epoch_name_from_data()
         if len(epoch_names) == 0:
-            raise ValueError(' '.join(('Unsupported time index name,',
-                                       '"Epoch" or "time".')))
+            bad_name = repr(self.index.name) if hasattr(
+                self.index, 'name') else "index name not set"
+            raise ValueError(''.join((
+                'Unsupported time index name [', bad_name,
+                '], expects "Epoch" or "time".')))
         else:
             if len(epoch_names) > 1:
                 gdm.logger.error("".join(["Multiple standard time index ",
@@ -888,7 +891,7 @@ class Instrument(object):
             try:
                 # Try loading as values
                 self.data[var_key].loc[indict] = in_data
-            except (TypeError, KeyError, IndexError):
+            except (TypeError, KeyError, IndexError, ValueError):
                 # Attempt to use loc, which will currently fail for Python 3.14
                 sel_dict = {
                     self.data[var_key].dims[i]: self.data[var_key][
@@ -903,10 +906,12 @@ class Instrument(object):
                     # used indices for each dimension instead of paired indices,
                     # we invoke meshgrid to get the full range of index
                     # combinations
-                    sel_dat = self.data[var_key].values.copy()
-                    sel_ind = np.meshgrid(ind_keys)
-                    sel_dat[sel_ind] = in_data
-                    self.data[var_key].values = sel_dat
+                    if np.any([len(ikeys) > 0 for ikeys in ind_keys]):
+                        # Only update if there is something to update
+                        sel_dat = self.data[var_key].values.copy()
+                        sel_ind = np.meshgrid(ind_keys)
+                        sel_dat[sel_ind] = in_data
+                        self.data[var_key].values = sel_dat
 
             # Finish updating by adding meta data
             self.data[var_key].attrs.update(new)
