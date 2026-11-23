@@ -798,8 +798,8 @@ class TestListFiles(object):
         """
         for i, ext in enumerate(general.file_types.values()):
             # Get the desired base file name
-            j = 0 if same_time else i
-            base_filename = os.path.splitext(self.inst.files.files[j])[0]
+            jtime = self.inst.files.files.index[0 if same_time else i]
+            base_filename = os.path.splitext(self.inst.files.files[jtime])[0]
             temp_file = os.path.join(self.inst.files.data_path,
                                      "{:s}.{:s}".format(base_filename, ext))
 
