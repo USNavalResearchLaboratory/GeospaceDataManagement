@@ -250,7 +250,7 @@ class TestLocal(object):
                            'day': [3, 4], 'hour': [5, 6], 'min': [7, 8],
                            'sec': [9, 10], 'other': ['fun', 'data']}))
 
-        testing.assert_isinstance(self.out, pds.Series)
+        testing.assert_isinstance(self.out, pds.DatetimeIndex)
         assert self.out[0].to_pydatetime() == dt.datetime(2020, 1, 3, 5, 7, 9)
         return
 
