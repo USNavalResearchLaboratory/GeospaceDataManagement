@@ -47,7 +47,7 @@ JRO_ISR
 -------
 
 The incoherent scatter radar (ISR) at the
-`Jicamarca Radio Observatory <https://www.igp.gob.pe/observatorios/radio-observatorio-jicamarca/?page_id=6609>`_
+`Jicamarca Radio Observatory <https://en.wikipedia.org/wiki/Jicamarca_Radio_Observatory>`_
 regularly measures the velocity, density, and other ionospheric characteristics
 near the magnetic equator over Peru.
 
