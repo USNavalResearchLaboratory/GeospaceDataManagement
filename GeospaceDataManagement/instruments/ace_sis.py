@@ -25,8 +25,8 @@ tag
 inst_id
     - ''
 
-Note
-----
+Notes
+-----
 This is not the ACE scientific data set, which will be available at NASA
 
 Examples
@@ -105,8 +105,8 @@ def init(self):
 def clean(self):
     """Clean real-time ACE data using the status flag.
 
-    Note
-    ----
+    Notes
+    -----
     Supports 'clean' and 'dirty'.  Replaces all fill values with NaN.
     Clean - status flag of zero (nominal data)
     Dirty - status flag < 9 (accepts bad data record, removes no data record)
@@ -162,8 +162,8 @@ def load(fnames, tag='', inst_id=''):
     --------
     GeospaceDataManagement.instruments.methods.general.load_csv_data
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """

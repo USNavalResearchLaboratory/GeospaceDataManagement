@@ -43,8 +43,8 @@ been successfully completed.
     f107.load(date=f107.lasp_stime, end_date=f107.today())
 
 
-Note
-----
+Notes
+-----
 The forecast data is stored by generation date, where each file contains the
 forecast for the next three days. Forecast data downloads are only supported
 for the current day. When loading forecast data, the date specified with the
@@ -171,8 +171,8 @@ def load(fnames, tag='', inst_id=''):
     --------
     gdm.instruments.methods.general.load_csv_data
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """
@@ -266,8 +266,8 @@ def list_files(tag='', inst_id='', data_path='', format_str=None):
     out_files : pds.Series
         A Series containing the verified available files
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """
@@ -374,8 +374,8 @@ def download(date_array, tag, inst_id, data_path, update_files=False,
     --------
     Only able to download current forecast data, not archived forecasts.
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """

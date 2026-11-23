@@ -10,3 +10,6 @@ Here are some examples that demonstrate how to use various tools and features.
    examples/ex_ace.rst
    examples/ex_mult_downloads.rst
    examples/ex_mock_downloads.rst
+   examples/ex_dmsp_methods.rst
+   examples/ex_gnss_tec.rst
+   examples/ex_jro_isr_beam.rst

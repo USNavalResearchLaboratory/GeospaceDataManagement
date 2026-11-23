@@ -16,7 +16,7 @@ python package installer "pip" or your favorite package manager.
 Standard installation
 ---------------------
 
-GeospaceDataManagement itself may be installed from a terminal command line::
+GeospaceDataManagement may be installed from a terminal command line::
 
    pip install GeospaceDataManagement
 
@@ -49,3 +49,26 @@ The use of `-e` in the setup command installs the code 'in-place', so any
 changes to the software do not have to be reinstalled to take effect. It is not
 related to changing the pysat working branch from ``main`` to ``develop`` in the
 preceeding line.
+
+Optional Dependencies
+---------------------
+
+GeospaceDataManagement contains several sets of Instruments that have different
+dependencies.  To keep the package lightweight, these optional dependencies are
+not installed by default.  If you have them installed already, the additional
+instruments will be available.  However, if you want to ensure you have access
+to all potential instruments, provide the `instruments` option::
+
+   pip install GeospaceDataManagement[instruments]
+
+
+Alternatively, you can install only the additional support needed for the
+desired instrument suite::
+
+  pip install GeospaceDataManagement[space_weather]
+
+
+Current instrument suites supported include:
+
+* Space Weather as ``space_weather``, see :ref:`instruments-sw`
+* Madrigal as ``madrigal``, see :ref:`instruments-madrigal`

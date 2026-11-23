@@ -369,8 +369,8 @@ def calc_f107a(f107_inst, f107_name='f107', f107a_name='f107a', min_pnts=41,
     fill_label : str
         Meta fill value label (default='fill_val')
 
-    Note
-    ----
+    Notes
+    -----
     Will not pad data on its own
 
     """

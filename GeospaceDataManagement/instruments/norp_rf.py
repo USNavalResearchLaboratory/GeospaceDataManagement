@@ -100,8 +100,8 @@ def load(fnames, tag='', inst_id=''):
     --------
     GeospaceDataManagement.instruments.methods.general.load_csv_data
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """
@@ -167,8 +167,8 @@ def list_files(tag='', inst_id='', data_path='', format_str=None):
     out_files : pds.Series
         A Series containing the verified available files
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """
@@ -215,8 +215,8 @@ def download(date_array, tag, inst_id, data_path, update_files=False,
         If a problem is encountered connecting to the gateway or retrieving
         data from the remote or local repository.
 
-    Note
-    ----
+    Notes
+    -----
     Called by GeospaceDataManagement. Not intended for direct use by user.
 
     """

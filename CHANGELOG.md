@@ -6,6 +6,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 [0.0.3] - 2026-10-XX
 --------------------
 * ENH:
+  - Added Madrigal instruments as an optional installation, as well as an option
+    to install all optional instruments
   - Added the ability to turn GFZ download certificate verification on and off
   - Added a warning if some of the requested download days were not retrieved
   - Added support for unexpanded user paths during file creation
@@ -18,7 +20,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 * DOC:
   - Updated redirecting links
   - Added more tutorials
-  - Published on RTDs
+  - Added material to facilitate publishing on RTDs
 
 [0.0.2] - 2026-10-02
 --------------------
