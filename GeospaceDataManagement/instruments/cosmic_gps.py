@@ -71,8 +71,8 @@ import pandas as pds
 import xarray as xr
 
 import GeospaceDataManagement as gdm
-from GeospaceDataManagement.utils import files as futils
 from GeospaceDataManagement.instruments.sw_methods import cdaac
+from GeospaceDataManagement.utils import files as futils
 
 
 # ----------------------------------------------------------------------------
