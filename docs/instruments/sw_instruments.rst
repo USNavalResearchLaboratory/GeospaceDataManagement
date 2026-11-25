@@ -404,7 +404,7 @@ CDAAC Methods
 Supports the CDAAC instruments by providing download support.
 
 
-.. automodule:: GeospaceDataManagement.instruments.sw_methods.cddac
+.. automodule:: GeospaceDataManagement.instruments.sw_methods.cdaac
    :members:
 
 
