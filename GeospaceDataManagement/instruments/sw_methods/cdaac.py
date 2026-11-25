@@ -22,7 +22,8 @@ import GeospaceDataManagement as gdm
 
 
 def download(date_array, tag, inst_id, supported_tags=None,
-             data_path='', sub_path=False, user=None, password=None):
+             data_path='', mock_download_dir=None, sub_path=False, user=None,
+             password=None):
     """Download data from CDAAC https server.
 
     Parameters
@@ -41,6 +42,10 @@ def download(date_array, tag, inst_id, supported_tags=None,
         (default=None)
     data_path : str
         Path to directory to download data to. (default='')
+    mock_download_dir : str or NoneType
+        Local directory with downloaded files or None. If not None, will
+        process any files with the correct name and date as if they were
+        downloaded (default=None)
     sub_path : bool
         If True, break up data into further subdirectories based on date.
         (default=False)
