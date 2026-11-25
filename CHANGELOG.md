@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 [0.0.3] - 2026-10-XX
 --------------------
 * ENH:
+  - Added CDAAC instruments to the space_weather optional installation
   - Added Madrigal instruments as an optional installation, as well as an option
     to install all optional instruments
   - Added the ability to turn GFZ download certificate verification on and off
