@@ -24,7 +24,6 @@ import datetime as dt
 import logging
 import os
 import pytest
-import sys
 import tempfile
 
 # Import the instrument package and test classes
