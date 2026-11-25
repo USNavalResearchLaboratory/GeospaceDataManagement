@@ -68,6 +68,32 @@ Supports ACE Solar Wind Electron Proton Alpha Monitor data.
    :members:
 
 
+.. _cdaac-inst:
+
+CDAAC
+-----
+
+The COSMIC Data Analysis and Archive Center (CDAAC) provides measurements from
+the F3/C and F7/C2 constellations.
+
+
+.. _cosmic_gps:
+
+COSMIC GPS
+----------
+
+.. automodule:: GeospaceDataManagement.instruments.cosmic_gps
+   :members:
+
+.. _cosmic2_ivm:
+
+COSMIC-2 IVM
+------------
+
+.. automodule:: GeospaceDataManagement.instruments.cosmic2_ivm
+  :members:
+
+
 .. _norp-inst:
 
 NoRP
@@ -371,6 +397,16 @@ information.
 
 .. automodule:: GeospaceDataManagement.instruments.sw_methods.ace
    :members:
+
+CDAAC Methods
+^^^^^^^^^^^^^
+
+Supports the CDAAC instruments by providing download support.
+
+
+.. automodule:: GeospaceDataManagement.instruments.sw_methods.cdaac
+   :members:
+
 
 Dst Methods
 ^^^^^^^^^^^

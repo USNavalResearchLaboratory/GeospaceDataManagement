@@ -3,6 +3,7 @@
 try:
     from GeospaceDataManagement.instruments.sw_methods import ace  # noqa F401
     from GeospaceDataManagement.instruments.sw_methods import auroral_electrojet  # noqa F401
+    from GeospaceDataManagement.instruments.sw_methods import cdaac  # noqa F401
     from GeospaceDataManagement.instruments.sw_methods import dst  # noqa F401
     from GeospaceDataManagement.instruments.sw_methods import f107  # noqa F401
     from GeospaceDataManagement.instruments.sw_methods import general  # noqa F401

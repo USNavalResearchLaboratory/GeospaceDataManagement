@@ -18,6 +18,7 @@
 import datetime as dt
 import numpy as np
 import pandas as pds
+import warnings
 
 import GeospaceDataManagement as gdm
 
@@ -307,3 +308,11 @@ def is_fill_val(data, fill_val):
         is_fill = data == fill_val
 
     return is_fill
+
+
+def clean_warn(self):
+    """Warn user that cleaning not yet available for this data set."""
+    warnings.warn(' '.join(('No cleaning routines available for',
+                            self.platform, self.name)))
+
+    return
