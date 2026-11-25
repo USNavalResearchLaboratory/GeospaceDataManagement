@@ -21,10 +21,10 @@ except ImportError as ierr:
 
 try:
     from GeospaceDataManagement.instruments import sw_methods  # noqa 401
-    __sw__ = ['ace_epam', 'ace_mag', 'ace_sis', 'ace_swepam', 'norp_rf',
-              'sw_ae', 'sw_al', 'sw_ap', 'sw_apo', 'sw_au', 'sw_cp',
-              'sw_dst', 'sw_f107', 'sw_flare', 'sw_hpo', 'sw_kp',
-              'sw_mgii', 'sw_polarcap', 'sw_sbfield', 'sw_ssn',
+    __sw__ = ['ace_epam', 'ace_mag', 'ace_sis', 'ace_swepam', 'cosmic_gps',
+              'cosmic2_ivm', 'norp_rf', 'sw_ae', 'sw_al', 'sw_ap', 'sw_apo',
+              'sw_au', 'sw_cp', 'sw_dst', 'sw_f107', 'sw_flare', 'sw_hpo',
+              'sw_kp', 'sw_mgii', 'sw_polarcap', 'sw_sbfield', 'sw_ssn',
               'sw_stormprob']
     __all__.extend(__sw__)
 except ImportError as ierr:
