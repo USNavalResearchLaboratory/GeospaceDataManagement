@@ -64,10 +64,10 @@ instruments = clslib.InstLibTests.initialize_test_package(
     clslib.InstLibTests, inst_loc=gdm.instruments, user_info=user_info,
     inst_subset='all')
 
+# Build a custom list of COSMIC gps instruments. These require custom
+# binning tests that are not used for other instruments.
+instruments['binning'] = []
 if not no_sw:
-    # Build a custom list of COSMIC gps instruments. These require custom
-    # binning tests that are not used for other instruments.
-    instruments['binning'] = []
     for inst in instruments['download']:
         if 'cosmic_gps' in inst['inst_module'].name:
             instruments['binning'].append(inst)
